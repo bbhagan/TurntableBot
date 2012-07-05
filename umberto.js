@@ -17,6 +17,8 @@ bot.personality = {
 	superusers: ['4fb58549aaa5cd6de10000de']
 };
 
+bot.cache = {};
+
 bot.dictionary = {
     commands: [
         {
@@ -61,6 +63,12 @@ bot.dictionary = {
             name: 'fan',
             type: 'alias',
             aliasOf: 'becomeFan'
+        },
+        {
+            name: 'fanOf',
+            type: 'command',
+            privs: 'everyone',
+            call: function(data){bot.listfanOfShell(data);}
         },
         {
             name: 'floor',
@@ -159,8 +167,8 @@ bot.dictionary = {
             {'text': 'Can you feel the love $USERNAME?'}
         ],
         downVote: [
-            {'text': 'LAME!'},
-            {'text': 'Zzzzzz.... You can do better, right?'}
+            {'text': 'LAME $DJ!'},
+            {'text': 'Zzzzzz.... You can do better, right $DJ?'}
         ],
         removeFan: [
             {'text': 'I\'m no longer a fan'},
@@ -272,39 +280,68 @@ Bot.prototype.findCommand = function(data, substituteCommand) {
 };
 
 Bot.prototype.checkSecurity = function(data, command) {
-    var securityPass = false;
-    var commandIssuer = data.userid;
+    try {
+        var securityPass = false;
+        var commandIssuer = data.userid;
+        var fans = bot.personality.fansof;
     
-    switch (command.privs) {
-        case 'everyone':
-            securityPass = true;
-            break;
-        case 'fan':
-            var i = 0;
-             
-            for (i in bot.personality.fans) {
-                if (fans[i] == commandIssuer){
-                    securityPass = true;
-                    console.log('setting sec pass true');
+        switch (command.privs) {
+            case 'everyone':
+                securityPass = true;
+                break;
+            case 'fan':
+                var i = 0;
+                for (i in fans) {
+                    if (fans[i] == commandIssuer){
+                        securityPass = true;
+                    }
+                };
+                break;
+            default:
+                var i = 0;
+                for (i in bot.personality.superusers) {
+                    if (bot.personality.superusers[i] == commandIssuer){
+                        securityPass = true;
+                    }
                 }
             };
-            
-            break;
-        default:
-            var i = 0;
-            for (i in bot.personality.superusers) {
-                if (bot.personality.superusers[i] == commandIssuer){
-                securityPass = true;
-                }
-            }
-        };
-    return securityPass;
+        return securityPass;
+    } catch(e) {
+        console.log('Error: Security check: ' + e);
+        return false;
+    }
 };
 
 Bot.prototype.updateFans = function() {
     try {
-       console.log('in here');
-        
+        bot.personality.fansof = [];
+        bot.getFanOf(function(data){
+            var i = 0;
+            for (i in data.fanof) {
+                bot.personality.fansof[i] = {};
+                bot.personality.fansof[i].userid = data.fanof[i];
+            }
+            
+            var j = 0;
+            console.log('bot.personality.fansof.length:'+ bot.personality.fansof.length);
+            for (j in bot.personality.fansof) {
+                console.log('j: ' + j);
+                console.log('bot.personality.fansof[j].userid: ' + bot.personality.fansof[j].userid);
+                
+                var userid = bot.personality.fansof[j].userid;
+                console.log('userid: ' + userid);
+                console.log('---------------------------------');
+                
+                bot.getProfile(userid, function(profileData) {
+                    console.log(' internal userid: ' + userid);
+                    bot.personality.fansof[j].name = profileData.name;
+                    //console.log('bot.personality.fansof[j].name: ' + bot.personality.fansof[j].name);
+                    //console.log('bot.personality.fansof[j]: %j', bot.personality.fansof[j]);
+                    //console.log('---------------------------------');
+                });
+            }
+            console.log('Updated fans');
+        });
     } catch (e) {
         console.log('Cannot update fans: ' + e);
     };
@@ -330,11 +367,35 @@ Bot.prototype.findCommandResponse = function(data, foundCommand, type) {
         };
         var response = responses[bot.getRandomIndex(responses.length)].text;
         response = response.replace('$USERNAME', '@'+data.name);
+        response = response.replace('$DJ', '@'+bot.cache.currentDJ.name);
         bot.speak(response);
     } catch (e) {
         console.log('Cannot findCommandResponse: ' + e);
     };
 };
+
+Bot.prototype.updateCacheSongAndDJ = function() {
+    try {
+        bot.roomInfo(true, function(roomData){
+            bot.cache.currentSong = roomData.room.metadata.current_song;
+            //console.log('bot.cache.currentSong: %j', bot.cache.currentSong);
+            bot.getProfile(roomData.room.metadata.current_dj, function(profileData) {
+                bot.cache.currentDJ = profileData;
+                //console.log('bot.cache.currentDJ: %j', bot.cache.currentDJ);
+            });
+        });
+    } catch (e) {
+        console.log('Error: Cannot update song data in cache: ' + e);
+    }
+};
+
+Bot.prototype.getRandomIndex = function(max) {
+    return Math.floor(Math.random()*max)
+};
+
+//
+// Command shells
+//
 
 Bot.prototype.becomeFanShell = function(speakData, mode) {
     try {
@@ -373,8 +434,7 @@ Bot.prototype.playlistAddShell = function(speakData) {
 Bot.prototype.followShell = function(speakData) {
     try {
         bot.directoryGraph(function(data) {
-            console.log('data: %j', data);
-        
+            console.log('bot.personality.fansof: %j', bot.personality.fansof);
         });
         
     } catch(e) {
@@ -382,9 +442,10 @@ Bot.prototype.followShell = function(speakData) {
     }
 };
 
-Bot.prototype.getRandomIndex = function(max) {
-    return Math.floor(Math.random()*max)
+Bot.prototype.listfanOfShell = function(speakData) {
+    console.log('bot.personality.fansof: %j', bot.personality.fansof);
 };
+
 
 //
 // Listeners
@@ -396,7 +457,23 @@ bot.on('speak', function (data) {
    	}
 });
 
-bot.updateFans();
+bot.on('roomChanged', function(data){
+    //init data
+    bot.updateFans();
+    bot.updateCacheSongAndDJ();
+});
+
+bot.on('newsong', function(songData) {
+    bot.updateCacheSongAndDJ();
+});
+
+bot.on('endsong', function(songData) {
+    bot.cache.currentSong = '';
+    bot.cache.currentDJ = '';
+    
+});
+
+
 
 
 
