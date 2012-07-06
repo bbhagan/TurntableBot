@@ -292,6 +292,7 @@ Bot.prototype.checkSecurity = function(data, command) {
     try {
         var securityPass = false;
         var commandIssuer = data.userid;
+        console.log('data.userid' + data.userid);
     
         switch (command.privs) {
             case 'everyone':
