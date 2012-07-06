@@ -14,7 +14,7 @@ var bot = new Bot(botBootstrapData.auth, botBootstrapData.userId, botBootstrapDa
 bot.personality = {
     name: 'Umberto the Bot',
 	aliases: ['Umberto', 'Berto', 'Bert', '@Umberto the bot'],
-	superusers: ['4fb58549aaa5cd6de10000de'],
+	superusers: ['4fb58549aaa5cd6de10000de', '4e7c40f3a3f75116580312d6'],
 	fanof: []
 };
 
@@ -213,11 +213,11 @@ bot.dictionary = {
             {'text': 'Bop, Bop, Bop, BOP!'},
             {'text': 'For you, $USERNAME, I\'ll bop anytime.'},
             {'text': ':metal: :) :metal:'},
-            {'text': 'Turn it UP!'},
-            {'text': 'Nice song!'},
+            {'text': 'Turn it UP $DJ!'},
+            {'text': 'Nice song $DJ!'},
             {'text': 'Gimme some room! I\'m gonna DANCE!'},
             {'text': 'Watch me shake it, $USERNAME!'},
-            {'text': 'I love this song!'},
+            {'text': 'I love this song $DJ!'},
             {'text': 'Hold my :beer: $USERNAME and I\'ll bop my head off!'},
             {'text': 'Is That Freedom Rock $USERNAME? Well Turn It Up Man.'},
         ],
