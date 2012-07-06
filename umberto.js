@@ -2,14 +2,14 @@
 // Init the bot
 //
 
-var basicBotData = {
+var botBootstrapData = {
 	auth: 'auth+live+30494244aa45aacabdf9b60e9e313133bfceff25',
 	userId: '4fb6caa6aaa5cd2e92000029',
 	homeRoomId: '4fe00efa4fb0bb6aaf0af862'
 };
 
 var Bot = require('ttapi');
-var bot = new Bot(basicBotData.auth, basicBotData.userId, basicBotData.homeRoomId);
+var bot = new Bot(botBootstrapData.auth, botBootstrapData.userId, botBootstrapData.homeRoomId);
 
 bot.personality = {
     name: 'Umberto the Bot',
@@ -88,6 +88,17 @@ bot.dictionary = {
             call: function(data){bot.followShell(data);}
         },
         {
+            name: 'goHome',
+            type: 'command',
+            privs: 'superuser',
+            call: function(data){bot.roomRegister(bot.personality.homeRoomId);}
+        },
+        {
+            name: 'go home',
+            type: 'alias',
+            aliasOf: 'goHome'
+        },
+        {
             name: 'grab',
             type: 'alias',
             aliasOf: 'playlistAdd'
@@ -101,6 +112,11 @@ bot.dictionary = {
             name: 'lame',
             type: 'alias',
             aliasOf: 'downVote'
+        },
+        {
+            name: 'next',
+            type: 'alias',
+            aliasOf: 'stopSong'
         },
         {
             name: 'playlistAdd',
@@ -126,6 +142,11 @@ bot.dictionary = {
             aliasOf: 'upVote'
         },
         {
+            name: 'skip',
+            type: 'alias',
+            aliasOf: 'stopSong'
+        },
+        {
             name: 'snag',
             type: 'alias',
             aliasOf: 'playlistAdd'
@@ -149,6 +170,12 @@ bot.dictionary = {
             name: 'step up',
             type: 'alias',
             aliasOf: 'addDj'
+        },
+        {
+            name: 'stopSong',
+            type: 'command',
+            privs: 'fan',
+            call: function(){bot.stopSong();}
         },
         {
             name: 'unfan',
@@ -227,9 +254,9 @@ bot.dictionary = {
 };
 
 // Copy over init data to personality
-bot.personality.userId = basicBotData.userId;
-bot.personality.auth = basicBotData.auth;
-bot.personality.homeRoomId = basicBotData.homeRoomId;
+bot.personality.userId = botBootstrapData.userId;
+bot.personality.auth = botBootstrapData.auth;
+bot.personality.homeRoomId = botBootstrapData.homeRoomId;
 // Copy over the Full name to aliases as a convenience
 bot.personality.aliases.push(bot.personality.name);
 
@@ -292,26 +319,28 @@ Bot.prototype.checkSecurity = function(data, command) {
     try {
         var securityPass = false;
         var commandIssuer = data.userid;
-        console.log('data.userid' + data.userid);
     
         switch (command.privs) {
             case 'everyone':
                 securityPass = true;
                 break;
             case 'fan':
-                var i = 0;
-                for (i in bot.personality.fanof) {
-                    if (bot.personality.fanof[i] == commandIssuer){
-                        securityPass = true;
-                    }
-                };
+                //check for superuser first
+                if (bot.isSuperuser(commandIssuer)) {
+                    securityPass = true;
+                } else {
+                    var i = 0;
+                    console.log('bot.personality.fanof.length: ' + bot.personality.fanof.length);
+                    for (i in bot.personality.fanof) {
+                        if (bot.personality.fanof[i].userid == commandIssuer){
+                            securityPass = true;
+                        }
+                    };
+                }
                 break;
             default:
-                var i = 0;
-                for (i in bot.personality.superusers) {
-                    if (bot.personality.superusers[i] == commandIssuer){
-                        securityPass = true;
-                    }
+                if (bot.isSuperuser(commandIssuer)) {
+                    securityPass = true;
                 }
             };
         return securityPass;
@@ -323,7 +352,10 @@ Bot.prototype.checkSecurity = function(data, command) {
 
 Bot.prototype.updateFans = function() {
     try {
+        console.log('in update');
         var getNamesAttempts = 0;
+        //reset fans
+        bot.personality.fanof = [];
         bot.getFanOf(function(data){
             var i = 0;
             for (i in data.fanof) {
@@ -366,26 +398,28 @@ Bot.prototype.updateFans = function() {
 
 Bot.prototype.findCommandResponse = function(data, foundCommand, type) {
     try {
-        var responses;
-        switch(type) {
-            case 'success':
-                responses = bot.dictionary.commandResponses[foundCommand];
-                if (!responses) {
-                    responses = bot.dictionary.genericCommandResponses;
-                    console.log('No response found for ' + foundCommand);
-                }
-                break;
-            case 'failedSecurity':
-                responses = bot.dictionary.failedSecurityCommandResponses;
-                break;
-            //fail
-            default:
-                responses = bot.dictionary.unknownCommandResponses;
-        };
-        var response = responses[bot.getRandomIndex(responses.length)].text;
-        response = response.replace('$USERNAME', '@'+data.name);
-        response = response.replace('$DJ', '@'+bot.cache.currentDJ.name);
-        bot.speak(response);
+        if (data.command != 'pm') {
+            var responses;
+            switch(type) {
+                case 'success':
+                    responses = bot.dictionary.commandResponses[foundCommand];
+                    if (!responses) {
+                        responses = bot.dictionary.genericCommandResponses;
+                        console.log('No response found for ' + foundCommand);
+                    }
+                    break;
+                case 'failedSecurity':
+                    responses = bot.dictionary.failedSecurityCommandResponses;
+                    break;
+                //fail
+                default:
+                    responses = bot.dictionary.unknownCommandResponses;
+            };
+            var response = responses[bot.getRandomIndex(responses.length)].text;
+            response = response.replace('$USERNAME', '@'+data.name);
+            response = response.replace('$DJ', '@'+bot.cache.currentDJ.name);
+            bot.speak(response);
+        }
     } catch (e) {
         console.log('Cannot findCommandResponse: ' + e);
     };
@@ -406,6 +440,23 @@ Bot.prototype.updateCacheSongAndDJ = function() {
     };
 };
 
+Bot.prototype.isSuperuser = function(userId) {
+    try {
+        var superuser = false;
+        var i = 0;
+        for (i in bot.personality.superusers) {
+            if (bot.personality.superusers[i] == userId) {
+                superuser = true;
+                break;
+            }
+        }
+        return superuser;
+    } catch (e) {
+        console.log('Error: Is super user failed: ' + e);
+        return false;
+    };    
+};
+
 Bot.prototype.getRandomIndex = function(max) {
     return Math.floor(Math.random()*max)
 };
@@ -424,13 +475,16 @@ Bot.prototype.becomeFanShell = function(speakData, mode) {
                 var userRegExp = new RegExp(userInRoom.name, 'i');
                 if (userRegExp.test(speakData.text)) {
                     if (mode == 'fan') {
-                        bot.becomeFan(userInRoom.userid);
+                        bot.becomeFan(userInRoom.userid, function(){
+                            bot.updateFans();
+                        });
                     } else {
-                        bot.removeFan(userInRoom.userid);
+                        bot.removeFan(userInRoom.userid, function(){
+                            bot.updateFans();
+                        });
                     }
                 }
             }
-            bot.updateFans();
         });
     } catch(e) {
         console.log('Cannot execute becomeFan (' + mode + '): ' + e);
@@ -461,15 +515,11 @@ Bot.prototype.followShell = function(speakData) {
         }
         
         if (targetUuid) {
-            bot.directoryGraph(function(data) {
-                var j = 0;
-                for (j in data.rooms) {
-                    if (data.rooms[i].metadata.userid == targetUuid) {
-                        bot.roomRegister(data.rooms[i].roomid, function() {
-                            console.log('Room move successful.');
-                        });
-                    }
-                };
+            bot.stalk(targetUuid, function(stalkData) {
+                console.log('stalkData: %j', stalkData)
+                bot.roomRegister(stalkData.roomId, function() {
+                    console.log('Room move successful.');
+                });
             });
         }
     } catch(e) {
@@ -490,6 +540,7 @@ Bot.prototype.listFanOfShell = function(speakData) {
             }
         }
         bot.dictionary.commandResponses.fanOf[0] = {'text' : response};
+        console.log('fanof: %j', bot.personality.fanof)
     } catch (e) {
         console.log('Error: Cannot list fans: ' + e);
     };
@@ -517,7 +568,18 @@ bot.on('newsong', function(songData) {
 });
 
 bot.on('pmmed', function(pmData) {
-    bot.findCommand(pmData);
+    //only super users can pm the bot
+    var i = 0;
+    for (i in bot.personality.superusers) {
+        if (bot.personality.superusers[i] == pmData.senderid) {
+            //create an object that looks like the speak data
+            bot.getProfile(pmData.senderid, function(profileData) {
+                var data = {"command": "pm", "userid": pmData.senderid, "name": profileData.name , "text": pmData.text}
+                bot.findCommand(data);
+            });
+            break;
+        }
+    }
 });
 
 
