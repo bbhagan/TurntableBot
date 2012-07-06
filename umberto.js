@@ -14,7 +14,8 @@ var bot = new Bot(basicBotData.auth, basicBotData.userId, basicBotData.homeRoomI
 bot.personality = {
     name: 'Umberto the Bot',
 	aliases: ['Umberto', 'Berto', 'Bert', '@Umberto the bot'],
-	superusers: ['4fb58549aaa5cd6de10000de']
+	superusers: ['4fb58549aaa5cd6de10000de'],
+	fanof: []
 };
 
 bot.cache = {};
@@ -68,7 +69,12 @@ bot.dictionary = {
             name: 'fanOf',
             type: 'command',
             privs: 'everyone',
-            call: function(data){bot.listfanOfShell(data);}
+            call: function(data){bot.listFanOfShell(data);}
+        },
+        {
+            name: 'fan of',
+            type: 'alias',
+            aliasOf: 'fanOf'
         },
         {
             name: 'floor',
@@ -187,7 +193,8 @@ bot.dictionary = {
             {'text': 'I love this song!'},
             {'text': 'Hold my :beer: $USERNAME and I\'ll bop my head off!'},
             {'text': 'Is That Freedom Rock $USERNAME? Well Turn It Up Man.'},
-        ]
+        ],
+        fanOf: []
     },
     genericCommandResponses: [
         {'text': 'You got it!'},
@@ -226,9 +233,6 @@ bot.personality.homeRoomId = basicBotData.homeRoomId;
 // Copy over the Full name to aliases as a convenience
 bot.personality.aliases.push(bot.personality.name);
 
-
-
-
 //
 // Utilities
 //
@@ -246,44 +250,48 @@ Bot.prototype.isNameReferenced = function(message) {
 	    }
 	    return false;
 	} catch (e) {
-	    console.log(e);
+	    console.log('Error: Is name referenced failed: ' + e);
 	};
 };
 
 Bot.prototype.findCommand = function(data, substituteCommand) {
-    var foundCommand = false;
-  	var i = 0;
-  	for (i in bot.dictionary.commands) {
-  	    var dictCommand = bot.dictionary.commands[i];
-  	    var cmdRegExp = new RegExp('\\b' + dictCommand.name + '\\b', 'i');
-  	    var chatCommand = (substituteCommand) ? substituteCommand : data.text;
-  	    if (cmdRegExp.test(chatCommand)) {
-  	        foundCommand = true;
-  	        if (dictCommand.type == 'alias') {
-  	            console.log('command:'+ dictCommand.name + ' is alias of ' + dictCommand.aliasOf + '.');
-  	            bot.findCommand(data, dictCommand.aliasOf);
-  	        } else {
-  	            if (bot.checkSecurity(data, dictCommand)) {
-                    console.log('command:'+ dictCommand.name + ' being called.');
-                    dictCommand.call(data);
-  	                bot.findCommandResponse(data, dictCommand.name, 'success');
+    try {
+        var foundCommand = false;
+  	    var i = 0;
+  	    for (i in bot.dictionary.commands) {
+  	        var dictCommand = bot.dictionary.commands[i];
+  	        var cmdRegExp = new RegExp('\\b' + dictCommand.name + '\\b', 'i');
+  	        var chatCommand = (substituteCommand) ? substituteCommand : data.text;
+  	        if (cmdRegExp.test(chatCommand)) {
+  	            foundCommand = true;
+  	            if (dictCommand.type == 'alias') {
+  	                console.log('command:'+ dictCommand.name + ' is alias of ' + dictCommand.aliasOf + '.');
+  	                bot.findCommand(data, dictCommand.aliasOf);
   	            } else {
-  	                console.log('command:'+ dictCommand.name + ' failed security.');
-  	                bot.findCommandResponse(data, dictCommand.name, 'failedSecurity');
+  	                if (bot.checkSecurity(data, dictCommand)) {
+                        console.log('command:'+ dictCommand.name + ' being called.');
+                        dictCommand.call(data);
+  	                    bot.findCommandResponse(data, dictCommand.name, 'success');
+  	                } else {
+  	                    console.log('command:'+ dictCommand.name + ' failed security.');
+  	                    bot.findCommandResponse(data, dictCommand.name, 'failedSecurity');
+  	                }
   	            }
-  	        }
-  	    } 
-  	}
-  	if (foundCommand == false) {
-  	    bot.findCommandResponse(data, dictCommand.name, 'unknown');
-  	}
+  	            break;
+  	        } 
+  	    }
+  	    if (foundCommand == false) {
+  	        bot.findCommandResponse(data, dictCommand.name, 'unknown');
+  	    }
+    } catch (e) {
+        console.log('Error: Find command failed: ' + e);
+    };
 };
 
 Bot.prototype.checkSecurity = function(data, command) {
     try {
         var securityPass = false;
         var commandIssuer = data.userid;
-        var fans = bot.personality.fansof;
     
         switch (command.privs) {
             case 'everyone':
@@ -291,8 +299,8 @@ Bot.prototype.checkSecurity = function(data, command) {
                 break;
             case 'fan':
                 var i = 0;
-                for (i in fans) {
-                    if (fans[i] == commandIssuer){
+                for (i in bot.personality.fanof) {
+                    if (bot.personality.fanof[i] == commandIssuer){
                         securityPass = true;
                     }
                 };
@@ -309,41 +317,49 @@ Bot.prototype.checkSecurity = function(data, command) {
     } catch(e) {
         console.log('Error: Security check: ' + e);
         return false;
-    }
+    };
 };
 
 Bot.prototype.updateFans = function() {
     try {
-        bot.personality.fansof = [];
+        var getNamesAttempts = 0;
         bot.getFanOf(function(data){
             var i = 0;
             for (i in data.fanof) {
-                bot.personality.fansof[i] = {};
-                bot.personality.fansof[i].userid = data.fanof[i];
+                bot.personality.fanof[i] = {};
+                bot.personality.fanof[i].userid = data.fanof[i];
             }
-            
-            var j = 0;
-            console.log('bot.personality.fansof.length:'+ bot.personality.fansof.length);
-            for (j in bot.personality.fansof) {
-                console.log('j: ' + j);
-                console.log('bot.personality.fansof[j].userid: ' + bot.personality.fansof[j].userid);
-                
-                var userid = bot.personality.fansof[j].userid;
-                console.log('userid: ' + userid);
-                console.log('---------------------------------');
-                
-                bot.getProfile(userid, function(profileData) {
-                    console.log(' internal userid: ' + userid);
-                    bot.personality.fansof[j].name = profileData.name;
-                    //console.log('bot.personality.fansof[j].name: ' + bot.personality.fansof[j].name);
-                    //console.log('bot.personality.fansof[j]: %j', bot.personality.fansof[j]);
-                    //console.log('---------------------------------');
-                });
-            }
-            console.log('Updated fans');
+            populateUserNames();
         });
     } catch (e) {
         console.log('Cannot update fans: ' + e);
+    };
+    
+    function populateUserNames() {
+        try {
+            var nextUuid;
+            var position;
+            var i = 0;
+            for (i in bot.personality.fanof) {
+                if (typeof bot.personality.fanof[i].name == 'undefined') {
+                    nextUuid = bot.personality.fanof[i].userid;
+                    position = i;
+                    break;
+                }
+            };
+            if (nextUuid, position) {
+                getNamesAttempts++;
+                //Protection agains infinitely trying to get user names
+                if (getNamesAttempts < bot.personality.fanof.length * 2) {
+                    bot.getProfile(nextUuid, function(profileData) {
+                        bot.personality.fanof[position].name = profileData.name;
+                        populateUserNames();
+                    });
+                }
+            }
+        } catch (e) {
+            console.log('Error: Cannot populate user names: ' + e);
+        };
     };
 };
 
@@ -386,7 +402,7 @@ Bot.prototype.updateCacheSongAndDJ = function() {
         });
     } catch (e) {
         console.log('Error: Cannot update song data in cache: ' + e);
-    }
+    };
 };
 
 Bot.prototype.getRandomIndex = function(max) {
@@ -433,17 +449,49 @@ Bot.prototype.playlistAddShell = function(speakData) {
 
 Bot.prototype.followShell = function(speakData) {
     try {
-        bot.directoryGraph(function(data) {
-            console.log('bot.personality.fansof: %j', bot.personality.fansof);
-        });
+        //Match the user name to uuid
+        var targetUuid;
+        var i = 0;
+        for (i in bot.personality.fanof) {
+            var fanOfExp = new RegExp(bot.personality.fanof[i].name, 'i');
+            if (fanOfExp.test(speakData.text)) {
+                targetUuid = bot.personality.fanof[i].userid;
+            }
+        }
         
+        if (targetUuid) {
+            bot.directoryGraph(function(data) {
+                var j = 0;
+                for (j in data.rooms) {
+                    if (data.rooms[i].metadata.userid == targetUuid) {
+                        bot.roomRegister(data.rooms[i].roomid, function() {
+                            console.log('Room move successful.');
+                        });
+                    }
+                };
+            });
+        }
     } catch(e) {
         console.log('Cannot follow: ' + e);
-    }
+    };
 };
 
-Bot.prototype.listfanOfShell = function(speakData) {
-    console.log('bot.personality.fansof: %j', bot.personality.fansof);
+Bot.prototype.listFanOfShell = function(speakData) {
+    try {
+        var response = 'Currently, I\'m a fan of: ';
+        var i = 0;
+        for (i in bot.personality.fanof) {
+            response += '@'+bot.personality.fanof[i].name;
+            if (i < bot.personality.fanof.length - 1) {
+                response += ', ';
+            } else {
+                response += '.';
+            }
+        }
+        bot.dictionary.commandResponses.fanOf[0] = {'text' : response};
+    } catch (e) {
+        console.log('Error: Cannot list fans: ' + e);
+    };
 };
 
 
@@ -467,10 +515,8 @@ bot.on('newsong', function(songData) {
     bot.updateCacheSongAndDJ();
 });
 
-bot.on('endsong', function(songData) {
-    bot.cache.currentSong = '';
-    bot.cache.currentDJ = '';
-    
+bot.on('pmmed', function(pmData) {
+    bot.findCommand(pmData);
 });
 
 
