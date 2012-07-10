@@ -26,182 +26,242 @@ bot.dictionary = {
             name: 'addDj',
             type: 'command',
             privs: 'superuser',
+            desc: 'Command the bot to DJ.',
             call: function(){bot.addDj();}
         },
         {
             name: 'awesome',
             type: 'alias',
+            desc: 'Alias of "upVote".',
             aliasOf: 'upVote'
         },
         {
             name: 'becomeFan',
             type: 'command',
             privs: 'superuser',
+            desc: 'Command the bot to become a fan of <username>.',
             call: function(data){bot.becomeFanShell(data, 'fan');}
         },
         {
             name: 'bob',
             type: 'alias',
+            desc: 'Alias of "upVote".',
             aliasOf: 'upVote'
         },
         {
             name: 'bop',
             type: 'alias',
+            desc: 'Alias of "upVote".',
             aliasOf: 'upVote'
         },
         {
             name: 'comeHere',
             type: 'command',
             privs: 'superuser',
+            desc: 'Command the bot to come to the room you are in.',
             call: function(data){bot.comeHereShell(data);}
         },
         {
             name: 'come here',
             type: 'alias',
+            desc: 'Alias of "comeHere".',
             aliasOf: 'comeHere'
+        },
+        {
+            name: 'commands',
+            type: 'command',
+            privs: 'superuser',
+            desc: 'Command the bot to list it\'s available commands',
+            call: function(data){bot.commandsShell(data);}
         },
         {
             name: 'dance',
             type: 'alias',
+            desc: 'Alias of "upVote".',
             aliasOf: 'upVote'
         },
         {
             name: 'downVote',
             type: 'command',
             privs: 'fan',
+            desc: 'Command the bot to "Lame" the current song.',
             call: function(){bot.vote('down');}
+        },
+        {
+            name: 'drop this',
+            type: 'alias',
+            desc: 'Alias of "playlistAdd".',
+            aliasOf: 'playlistRemove'
+        },
+        {
+            name: 'dump this',
+            type: 'alias',
+            desc: 'Alias of "playlistAdd".',
+            aliasOf: 'playlistRemove'
         },
         {
             name: 'fan',
             type: 'alias',
+            desc: 'Alias of "becomeFan".',
             aliasOf: 'becomeFan'
         },
         {
             name: 'fanOf',
             type: 'command',
             privs: 'everyone',
+            desc: 'Command bot to list the users it is a fan of.',
             call: function(data){bot.listFanOfShell(data);}
         },
         {
             name: 'fan of',
             type: 'alias',
+            desc: 'Alias of "fanOf".',
             aliasOf: 'fanOf'
         },
         {
             name: 'floor',
             type: 'alias',
+            desc: 'Alias of "remDj".',
             aliasOf: 'remDj'
         },
         {
             name: 'follow',
             type: 'command',
             privs: 'superuser',
+            desc: 'Command the bot to stalk <username>.',
             call: function(data){bot.followShell(data);}
         },
         {
             name: 'goHome',
             type: 'command',
             privs: 'superuser',
+            desc: 'Command the bot to go to it\'s home room.',
             call: function(data){bot.roomRegister(bot.personality.homeRoomId);}
         },
         {
             name: 'go home',
             type: 'alias',
+            desc: 'Alias of "goHome".',
             aliasOf: 'goHome'
         },
         {
             name: 'grab',
             type: 'alias',
+            desc: 'Alias of "playlistAdd".',
             aliasOf: 'playlistAdd'
         },
         {
             name: 'headbang',
             type: 'alias',
+            desc: 'Alias of "upVote".',
             aliasOf: 'upVote'
         },
         {
             name: 'lame',
             type: 'alias',
+            desc: 'Alias of "downVote".',
             aliasOf: 'downVote'
         },
         {
             name: 'next',
             type: 'alias',
+            desc: 'Alias of "stopSong".',
             aliasOf: 'stopSong'
         },
         {
             name: 'playlistAdd',
             type: 'command',
+            desc: 'Command the bot to add the current song to it\'s palylist.',
             privs: 'superuser',
             call: function(data){bot.playlistAddShell(data);}
+        },
+        {
+            name: 'playlistRemove',
+            type: 'command',
+            privs: 'superuser',
+            desc: 'Command the bot to remove the song from it\'s playlist and skip it\'s song.',
+            call: function(data){bot.playlistRemoveShell(data);}
         },
         {
             name: 'remDj',
             type: 'command',
             privs: 'superuser',
+            desc: 'Command the bot to stop DJ-ing.',
             call: function(){bot.remDj(bot.personality.userId);}
         },
         {
             name: 'removeFan',
             type: 'command',
             privs: 'superuser',
+            desc: 'Command the bot to un-fan <username>.',
             call: function(data){bot.becomeFanShell(data, 'unfan');}
         },
         {
             name: 'shake',
             type: 'alias',
+            desc: 'Alias of "upVote".',
             aliasOf: 'upVote'
         },
         {
             name: 'skip',
             type: 'alias',
+            desc: 'Alias of "stopSong".',
             aliasOf: 'stopSong'
         },
         {
             name: 'snag',
             type: 'alias',
+            desc: 'Alias of "playlistAdd".',
             aliasOf: 'playlistAdd'
         },
         {
             name: 'stage',
             type: 'alias',
+            desc: 'Alias of "addDj".',
             aliasOf: 'addDj'
         },
         {
             name: 'steal',
             type: 'alias',
+            desc: 'Alias of "playlistAdd".',
             aliasOf: 'playlistAdd'
         },
         {
             name: 'step down',
             type: 'alias',
+            desc: 'Alias of "remDj".',
             aliasOf: 'remDj'
         },
         {
             name: 'step up',
             type: 'alias',
+            desc: 'Alias of "addDj".',
             aliasOf: 'addDj'
         },
         {
             name: 'stopSong',
             type: 'command',
             privs: 'fan',
+            desc: 'Command the bot to skip it\'s song (while DJ-ing.)',
             call: function(){bot.stopSong();}
         },
         {
             name: 'unfan',
             type: 'alias',
+            desc: 'Alias of "removeFan".',
             aliasOf: 'removeFan'
         },
         {
             name: 'upVote',
             type: 'command',
             privs: 'everyone',
+            desc: 'Command the bot to "Awesome" the current song.',
             call: function(){bot.vote('up');}
         },
         {
             name: 'vote up',
             type: 'alias',
+            desc: 'Alias of "upVote".',
             aliasOf: 'upVote'
         }
     ],
@@ -235,8 +295,8 @@ bot.dictionary = {
         fanOf: []
     },
     genericCommandResponses: [
-        {'text': 'You got it!'},
-        {'text': 'Done and done.'},
+        {'text': 'You got it $USERNAME!'},
+        {'text': 'Done and done $USERNAME.'},
         {'text': 'Yes, yes, yes, YES!'},
         {'text': 'Bam! BAM!'},
     ],
@@ -255,6 +315,7 @@ bot.dictionary = {
         {'text': 'I can\'t, I just can\'t!'},
         {'text': '$USERNAME That makes as much sense as "Ich bin ein Berliner!"'},
         {'text': 'I wish I were as smart as you, $USERNAME, but alas I am just a bot.'},
+        {'text': 'Good going $USERNAME, you just fried some of my circuits.'},
     ],
     failedSecurityCommandResponses: [
         {'text': 'Sorry Dave, I can\'t let you do that!'},
@@ -513,6 +574,18 @@ Bot.prototype.playlistAddShell = function(speakData) {
     };
 };
 
+Bot.prototype.playlistRemoveShell = function(speakData) {
+    try {
+        bot.roomInfo(true, function(data) {
+            var currentSong = data.room.metadata.songlog[0]._id;
+            bot.playlistRemove(currentSong);
+            bot.stopSong();
+        });
+    } catch(e) {
+        console.log('Cannot remove from playlist: ' + e);
+    };
+};
+
 Bot.prototype.comeHereShell = function(speakData) {
     try {
         bot.stalk(speakData.userid, function(stalkData) {
@@ -565,6 +638,32 @@ Bot.prototype.listFanOfShell = function(speakData) {
         console.log('fanof: %j', bot.personality.fanof)
     } catch (e) {
         console.log('Error: Cannot list fans: ' + e);
+    };
+};
+
+Bot.prototype.commandsShell = function(speakData) {
+    try{
+        var i = 0;
+        for (i in bot.dictionary.commands) {
+            var command = bot.dictionary.commands[i];
+            if (command.name && command.desc && command.type) {
+                var privs;
+                if (command.type == 'alias') {
+                    var j = 0;
+                    for (j in bot.dictionary.commands) {
+                        if (bot.dictionary.commands[j].type == 'command' && bot.dictionary.commands[j].privs && bot.dictionary.commands[j].name == command.aliasOf) {
+                            privs = bot.dictionary.commands[j].privs;
+                            break;
+                        }
+                    }
+                } else {
+                    privs = command.privs;
+                }
+                bot.speak(command.name + ': ' + command.desc + ' -- ' + privs);
+            }
+        }
+    } catch (e) {
+        console.log('Error: Cannot list commands: ' + e);
     };
 };
 
