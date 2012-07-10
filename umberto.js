@@ -50,6 +50,17 @@ bot.dictionary = {
             aliasOf: 'upVote'
         },
         {
+            name: 'comeHere',
+            type: 'command',
+            privs: 'superuser',
+            call: function(data){bot.comeHereShell(data);}
+        },
+        {
+            name: 'come here',
+            type: 'alias',
+            aliasOf: 'comeHere'
+        },
+        {
             name: 'dance',
             type: 'alias',
             aliasOf: 'upVote'
@@ -501,6 +512,17 @@ Bot.prototype.playlistAddShell = function(speakData) {
         console.log('Cannot add to playlist: ' + e);
     };
 };
+
+Bot.prototype.comeHereShell = function(speakData) {
+    try {
+        bot.stalk(speakData.userid, function(stalkData) {
+            bot.roomRegister(stalkData.roomId);
+        });
+    } catch(e) {
+        console.log('Cannot follow: ' + e);
+    };
+};
+
 
 Bot.prototype.followShell = function(speakData) {
     try {
