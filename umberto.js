@@ -9,6 +9,7 @@ var botBootstrapData = {
 };
 
 var Bot = require('ttapi');
+
 var bot = new Bot(botBootstrapData.auth, botBootstrapData.userId, botBootstrapData.homeRoomId);
 
 bot.personality = {
@@ -69,10 +70,9 @@ bot.dictionary = {
         },
         {
             name: 'commands',
-            type: 'command',
-            privs: 'superuser',
-            desc: 'Command the bot to list it\'s available commands',
-            call: function(data){bot.commandsShell(data);}
+            type: 'alias',
+            desc: 'Alias of "listCommands".',
+            aliasOf: 'listCommands'
         },
         {
             name: 'dance',
@@ -157,10 +157,23 @@ bot.dictionary = {
             aliasOf: 'upVote'
         },
         {
+            name: 'help',
+            type: 'alias',
+            desc: 'Alias of "listCommands".',
+            aliasOf: 'listCommands'
+        },
+        {
             name: 'lame',
             type: 'alias',
             desc: 'Alias of "downVote".',
             aliasOf: 'downVote'
+        },
+        {
+            name: 'listCommands',
+            type: 'command',
+            privs: 'superuser',
+            desc: 'Command the bot to list it\'s available commands',
+            call: function(data){bot.listCommandsShell(data);}
         },
         {
             name: 'next',
@@ -278,6 +291,17 @@ bot.dictionary = {
             {'text': 'I\'m no longer a fan'},
             {'text': 'Yeah, I didn\'t like them anyway!'}
         ],
+        stopSong: [
+            {'text': 'Moving on...'},
+        ],
+        playlistAdd: [
+            {'text': 'It\'s mine! All mine!'},
+            {'text': 'You don\t mind, do you $DJ?'}
+        ],
+        playlistRemove: [
+            {'text': 'Where did THAT come from?!'},
+            {'text': 'Pewey!'}
+        ],
         upVote: [
             {'text': 'This song _is_ awesome, $USERNAME!'},
             {'text': 'Bopping is left-right-left, or right-left-right?'},
@@ -292,7 +316,9 @@ bot.dictionary = {
             {'text': 'Hold my :beer: $USERNAME and I\'ll bop my head off!'},
             {'text': 'Is That Freedom Rock $USERNAME? Well Turn It Up Man.'},
         ],
-        fanOf: []
+        //empty arrays b/c the shell takes care of speaking
+        fanOf: [],
+        listCommands: []
     },
     genericCommandResponses: [
         {'text': 'You got it $USERNAME!'},
@@ -340,9 +366,9 @@ Bot.prototype.isNameReferenced = function(message) {
 	try {
 	    var i = 0;
 	
-	    for (i in bot.personality.aliases) {
+	    for (i in this.personality.aliases) {
 		    //var namePattern = new RegExp (/\bbert\b/i);
-		    var nameRegEx = new RegExp('\\b' + bot.personality.aliases[i] + '\\b', 'i');
+		    var nameRegEx = new RegExp('\\b' + this.personality.aliases[i] + '\\b', 'i');
 		    if (nameRegEx.test(message)) {
 			    return true;
 		    }
@@ -357,30 +383,30 @@ Bot.prototype.findCommand = function(data, substituteCommand) {
     try {
         var foundCommand = false;
   	    var i = 0;
-  	    for (i in bot.dictionary.commands) {
-  	        var dictCommand = bot.dictionary.commands[i];
+  	    for (i in this.dictionary.commands) {
+  	        var dictCommand = this.dictionary.commands[i];
   	        var cmdRegExp = new RegExp('\\b' + dictCommand.name + '\\b', 'i');
   	        var chatCommand = (substituteCommand) ? substituteCommand : data.text;
   	        if (cmdRegExp.test(chatCommand)) {
   	            foundCommand = true;
   	            if (dictCommand.type == 'alias') {
-  	                console.log('command:'+ dictCommand.name + ' is alias of ' + dictCommand.aliasOf + '.');
-  	                bot.findCommand(data, dictCommand.aliasOf);
+  	                console.log('Info: command:'+ dictCommand.name + ' is alias of ' + dictCommand.aliasOf + '.');
+  	                this.findCommand(data, dictCommand.aliasOf);
   	            } else {
-  	                if (bot.checkSecurity(data, dictCommand)) {
-                        console.log('command:'+ dictCommand.name + ' being called.');
+  	                if (this.checkSecurity(data, dictCommand)) {
+                        console.log('Info: command:'+ dictCommand.name + ' being called.');
                         dictCommand.call(data);
-  	                    bot.findCommandResponse(data, dictCommand.name, 'success');
+  	                    this.findCommandResponse(data, dictCommand.name, 'success');
   	                } else {
-  	                    console.log('command:'+ dictCommand.name + ' failed security.');
-  	                    bot.findCommandResponse(data, dictCommand.name, 'failedSecurity');
+  	                    console.log('Info: command:'+ dictCommand.name + ' failed security.');
+  	                    this.findCommandResponse(data, dictCommand.name, 'failedSecurity');
   	                }
   	            }
   	            break;
   	        } 
   	    }
   	    if (foundCommand == false) {
-  	        bot.findCommandResponse(data, dictCommand.name, 'unknown');
+  	        this.findCommandResponse(data, dictCommand.name, 'unknown');
   	    }
     } catch (e) {
         console.log('Error: Find command failed: ' + e);
@@ -398,20 +424,19 @@ Bot.prototype.checkSecurity = function(data, command) {
                 break;
             case 'fan':
                 //check for superuser first
-                if (bot.isSuperuser(commandIssuer)) {
+                if (this.isSuperuser(commandIssuer)) {
                     securityPass = true;
                 } else {
                     var i = 0;
-                    console.log('bot.personality.fanof.length: ' + bot.personality.fanof.length);
-                    for (i in bot.personality.fanof) {
-                        if (bot.personality.fanof[i].userid == commandIssuer){
+                    for (i in this.personality.fanof) {
+                        if (this.personality.fanof[i].userid == commandIssuer){
                             securityPass = true;
                         }
                     };
                 }
                 break;
             default:
-                if (bot.isSuperuser(commandIssuer)) {
+                if (this.isSuperuser(commandIssuer)) {
                     securityPass = true;
                 }
             };
@@ -424,20 +449,21 @@ Bot.prototype.checkSecurity = function(data, command) {
 
 Bot.prototype.updateFans = function() {
     try {
-        console.log('in update');
+        var parentThis = this;
+        console.log('Info: Updating fan list.');
         var getNamesAttempts = 0;
         //reset fans
-        bot.personality.fanof = [];
-        bot.getFanOf(function(data){
+        this.personality.fanof = [];
+        this.getFanOf(function(data){
             var i = 0;
             for (i in data.fanof) {
-                bot.personality.fanof[i] = {};
-                bot.personality.fanof[i].userid = data.fanof[i];
+                parentThis.personality.fanof[i] = {};
+                parentThis.personality.fanof[i].userid = data.fanof[i];
             }
             populateUserNames();
         });
     } catch (e) {
-        console.log('Cannot update fans: ' + e);
+        console.log('Error: Cannot update fans: ' + e);
     };
     
     function populateUserNames() {
@@ -445,9 +471,9 @@ Bot.prototype.updateFans = function() {
             var nextUuid;
             var position;
             var i = 0;
-            for (i in bot.personality.fanof) {
-                if (typeof bot.personality.fanof[i].name == 'undefined') {
-                    nextUuid = bot.personality.fanof[i].userid;
+            for (i in parentThis.personality.fanof) {
+                if (typeof parentThis.personality.fanof[i].name == 'undefined') {
+                    nextUuid = parentThis.personality.fanof[i].userid;
                     position = i;
                     break;
                 }
@@ -455,9 +481,9 @@ Bot.prototype.updateFans = function() {
             if (nextUuid, position) {
                 getNamesAttempts++;
                 //Protection agains infinitely trying to get user names
-                if (getNamesAttempts < bot.personality.fanof.length * 2) {
-                    bot.getProfile(nextUuid, function(profileData) {
-                        bot.personality.fanof[position].name = profileData.name;
+                if (getNamesAttempts < parentThis.personality.fanof.length * 2) {
+                    parentThis.getProfile(nextUuid, function(profileData) {
+                        parentThis.personality.fanof[position].name = profileData.name;
                         populateUserNames();
                     });
                 }
@@ -474,23 +500,23 @@ Bot.prototype.findCommandResponse = function(data, foundCommand, type) {
             var responses;
             switch(type) {
                 case 'success':
-                    responses = bot.dictionary.commandResponses[foundCommand];
+                    responses = this.dictionary.commandResponses[foundCommand];
                     if (!responses) {
-                        responses = bot.dictionary.genericCommandResponses;
-                        console.log('No response found for ' + foundCommand);
+                        responses = this.dictionary.genericCommandResponses;
+                        console.log('Info: No response found for ' + foundCommand);
                     }
                     break;
                 case 'failedSecurity':
-                    responses = bot.dictionary.failedSecurityCommandResponses;
+                    responses = this.dictionary.failedSecurityCommandResponses;
                     break;
                 //fail
                 default:
-                    responses = bot.dictionary.unknownCommandResponses;
+                    responses = this.dictionary.unknownCommandResponses;
             };
-            var response = responses[bot.getRandomIndex(responses.length)].text;
+            var response = responses[this.getRandomIndex(responses.length)].text;
             response = response.replace('$USERNAME', '@'+data.name);
-            response = response.replace('$DJ', '@'+bot.cache.currentDJ.name);
-            bot.speak(response);
+            response = response.replace('$DJ', '@'+this.cache.currentDJ.name);
+            this.speak(response);
         }
     } catch (e) {
         console.log('Cannot findCommandResponse: ' + e);
@@ -499,12 +525,11 @@ Bot.prototype.findCommandResponse = function(data, foundCommand, type) {
 
 Bot.prototype.updateCacheSongAndDJ = function() {
     try {
-        bot.roomInfo(true, function(roomData){
-            bot.cache.currentSong = roomData.room.metadata.current_song;
-            //console.log('bot.cache.currentSong: %j', bot.cache.currentSong);
-            bot.getProfile(roomData.room.metadata.current_dj, function(profileData) {
-                bot.cache.currentDJ = profileData;
-                //console.log('bot.cache.currentDJ: %j', bot.cache.currentDJ);
+        var parentThis = this;
+        this.roomInfo(true, function(roomData){
+            parentThis.cache.currentSong = roomData.room.metadata.current_song;
+            parentThis.getProfile(roomData.room.metadata.current_dj, function(profileData) {
+                parentThis.cache.currentDJ = profileData;
             });
         });
     } catch (e) {
@@ -516,8 +541,8 @@ Bot.prototype.isSuperuser = function(userId) {
     try {
         var superuser = false;
         var i = 0;
-        for (i in bot.personality.superusers) {
-            if (bot.personality.superusers[i] == userId) {
+        for (i in this.personality.superusers) {
+            if (this.personality.superusers[i] == userId) {
                 superuser = true;
                 break;
             }
@@ -539,7 +564,8 @@ Bot.prototype.getRandomIndex = function(max) {
 
 Bot.prototype.becomeFanShell = function(speakData, mode) {
     try {
-        bot.roomInfo(false, function(data) {
+        var parentThis = this;
+        this.roomInfo(false, function(data) {
             var usersInRoom = data.users;
             var i = 0;
             for (i in usersInRoom) {
@@ -547,12 +573,12 @@ Bot.prototype.becomeFanShell = function(speakData, mode) {
                 var userRegExp = new RegExp(userInRoom.name, 'i');
                 if (userRegExp.test(speakData.text)) {
                     if (mode == 'fan') {
-                        bot.becomeFan(userInRoom.userid, function(){
-                            bot.updateFans();
+                        parentThis.becomeFan(userInRoom.userid, function(){
+                            parentThis.updateFans();
                         });
                     } else {
-                        bot.removeFan(userInRoom.userid, function(){
-                            bot.updateFans();
+                        parentThis.removeFan(userInRoom.userid, function(){
+                            parentThis.updateFans();
                         });
                     }
                 }
@@ -565,9 +591,10 @@ Bot.prototype.becomeFanShell = function(speakData, mode) {
 
 Bot.prototype.playlistAddShell = function(speakData) {
     try {
-        bot.roomInfo(true, function(data) {
+        var parentThis = this;
+        this.roomInfo(true, function(data) {
             var currentSong = data.room.metadata.songlog[0]._id;
-            bot.playlistAdd(currentSong);
+            parentThis.playlistAdd(currentSong);
         });
     } catch(e) {
         console.log('Cannot add to playlist: ' + e);
@@ -576,10 +603,11 @@ Bot.prototype.playlistAddShell = function(speakData) {
 
 Bot.prototype.playlistRemoveShell = function(speakData) {
     try {
-        bot.roomInfo(true, function(data) {
+        var parentThis = this;
+        this.roomInfo(true, function(data) {
             var currentSong = data.room.metadata.songlog[0]._id;
-            bot.playlistRemove(currentSong);
-            bot.stopSong();
+            parentThis.playlistRemove(currentSong);
+            parentThis.stopSong();
         });
     } catch(e) {
         console.log('Cannot remove from playlist: ' + e);
@@ -588,8 +616,9 @@ Bot.prototype.playlistRemoveShell = function(speakData) {
 
 Bot.prototype.comeHereShell = function(speakData) {
     try {
-        bot.stalk(speakData.userid, function(stalkData) {
-            bot.roomRegister(stalkData.roomId);
+        var parentThis = this;
+        this.stalk(speakData.userid, function(stalkData) {
+            parentThis.roomRegister(stalkData.roomId);
         });
     } catch(e) {
         console.log('Cannot follow: ' + e);
@@ -599,21 +628,22 @@ Bot.prototype.comeHereShell = function(speakData) {
 
 Bot.prototype.followShell = function(speakData) {
     try {
+        var parentThis = this;
         //Match the user name to uuid
         var targetUuid;
         var i = 0;
-        for (i in bot.personality.fanof) {
-            var fanOfExp = new RegExp(bot.personality.fanof[i].name, 'i');
+        for (i in this.personality.fanof) {
+            var fanOfExp = new RegExp(this.personality.fanof[i].name, 'i');
             if (fanOfExp.test(speakData.text)) {
-                targetUuid = bot.personality.fanof[i].userid;
+                targetUuid = this.personality.fanof[i].userid;
             }
         }
         
         if (targetUuid) {
-            bot.stalk(targetUuid, function(stalkData) {
+            this.stalk(targetUuid, function(stalkData) {
                 console.log('stalkData: %j', stalkData)
-                bot.roomRegister(stalkData.roomId, function() {
-                    console.log('Room move successful.');
+                parentThis.roomRegister(stalkData.roomId, function() {
+                    console.log('Info: Room move successful.');
                 });
             });
         }
@@ -626,40 +656,39 @@ Bot.prototype.listFanOfShell = function(speakData) {
     try {
         var response = 'Currently, I\'m a fan of: ';
         var i = 0;
-        for (i in bot.personality.fanof) {
-            response += '@'+bot.personality.fanof[i].name;
-            if (i < bot.personality.fanof.length - 1) {
+        for (i in this.personality.fanof) {
+            response += '@'+this.personality.fanof[i].name;
+            if (i < this.personality.fanof.length - 1) {
                 response += ', ';
             } else {
                 response += '.';
             }
         }
-        bot.dictionary.commandResponses.fanOf[0] = {'text' : response};
-        console.log('fanof: %j', bot.personality.fanof)
+        this.dictionary.commandResponses.fanOf[0] = {'text' : response};
     } catch (e) {
         console.log('Error: Cannot list fans: ' + e);
     };
 };
 
-Bot.prototype.commandsShell = function(speakData) {
+Bot.prototype.listCommandsShell = function(speakData) {
     try{
         var i = 0;
-        for (i in bot.dictionary.commands) {
-            var command = bot.dictionary.commands[i];
+        for (i in this.dictionary.commands) {
+            var command = this.dictionary.commands[i];
             if (command.name && command.desc && command.type) {
                 var privs;
                 if (command.type == 'alias') {
                     var j = 0;
-                    for (j in bot.dictionary.commands) {
-                        if (bot.dictionary.commands[j].type == 'command' && bot.dictionary.commands[j].privs && bot.dictionary.commands[j].name == command.aliasOf) {
-                            privs = bot.dictionary.commands[j].privs;
+                    for (j in this.dictionary.commands) {
+                        if (this.dictionary.commands[j].type == 'command' && this.dictionary.commands[j].privs && this.dictionary.commands[j].name == command.aliasOf) {
+                            privs = this.dictionary.commands[j].privs;
                             break;
                         }
                     }
                 } else {
                     privs = command.privs;
                 }
-                bot.speak(command.name + ': ' + command.desc + ' -- ' + privs);
+                this.speak(command.name + ': ' + command.desc + ' -- ' + privs);
             }
         }
     } catch (e) {
