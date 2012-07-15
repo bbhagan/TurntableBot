@@ -12,3 +12,13 @@ node_modules/ttapi/websocket.js
 node_modules/ttapi/index.js
 
 node_modules/ttapi/README.md
+
+node_modules/dateformat/Readme.md
+
+node_modules/dateformat/lib/dateformat.js
+
+node_modules/dateformat/package.json
+
+node_modules/dateformat/test/test_weekofyear.js
+
+node_modules/dateformat/test/test_weekofyear.sh
