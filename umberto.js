@@ -30,7 +30,7 @@ bot.dictionary = {
             type: 'command',
             privs: 'superuser',
             desc: 'Command the bot to DJ.',
-            call: function(){bot.addDj();}
+            call: function(data, callback){bot.addDj(function() { callback() });}
         },
         {
             name: 'awesome',
@@ -43,7 +43,7 @@ bot.dictionary = {
             type: 'command',
             privs: 'superuser',
             desc: 'Command the bot to become a fan of <username>.',
-            call: function(data){bot.becomeFanShell(data, 'fan');}
+            call: function(data, callback){bot.becomeFanShell(data, 'fan', function() { callback() });}
         },
         {
             name: 'bob',
@@ -62,7 +62,7 @@ bot.dictionary = {
             type: 'command',
             privs: 'superuser',
             desc: 'Command the bot to come to the room you are in.',
-            call: function(data){bot.comeHereShell(data);}
+            call: function(data, callback){bot.comeHereShell(data, function() { callback() });}
         },
         {
             name: 'come here',
@@ -87,7 +87,7 @@ bot.dictionary = {
             type: 'command',
             privs: 'fan',
             desc: 'Command the bot to "Lame" the current song.',
-            call: function(){bot.vote('down');}
+            call: function(data, callback){bot.vote('down', function() { callback() });}
         },
         {
             name: 'drop this',
@@ -98,7 +98,7 @@ bot.dictionary = {
         {
             name: 'dump this',
             type: 'alias',
-            desc: 'Alias of "playlistAdd".',
+            desc: 'Alias of "playlistRemove".',
             aliasOf: 'playlistRemove'
         },
         {
@@ -112,7 +112,7 @@ bot.dictionary = {
             type: 'command',
             privs: 'everyone',
             desc: 'Command bot to list the users it is a fan of.',
-            call: function(data){bot.listFanOfShell(data);}
+            call: function(data, callback){bot.listFanOfShell(data, function() { callback() });}
         },
         {
             name: 'fan of',
@@ -131,21 +131,21 @@ bot.dictionary = {
             type: 'command',
             privs: 'superuser',
             desc: 'Command the bot to stalk <username>.',
-            call: function(data){bot.followShell(data);}
+            call: function(data){bot.followShell(data, function() { callback() });}
         },
         {
             name: 'getFans',
             type: 'command',
             privs: 'everyone',
             desc: 'Command bot to list the users who are fans of the bot.',
-            call: function(data){bot.listFansShell(data);}
+            call: function(data, callback){bot.listFansShell(data, function() { callback() });}
         },
         {
             name: 'goHome',
             type: 'command',
             privs: 'superuser',
             desc: 'Command the bot to go to it\'s home room.',
-            call: function(data){bot.roomRegister(bot.personality.homeRoomId);}
+            call: function(data, callback){bot.roomRegister(bot.personality.homeRoomId, function() { callback() });}
         },
         {
             name: 'go home',
@@ -180,9 +180,9 @@ bot.dictionary = {
         {
             name: 'listCommands',
             type: 'command',
-            privs: 'superuser',
+            privs: 'everyone',
             desc: 'Command the bot to list it\'s available commands',
-            call: function(data){bot.listCommandsShell(data);}
+            call: function(data, callback){bot.listCommandsShell(data, function() { callback() });}
         },
         {
             name: 'next',
@@ -195,35 +195,35 @@ bot.dictionary = {
             type: 'command',
             desc: 'Command the bot to add the current song to it\'s palylist.',
             privs: 'superuser',
-            call: function(data){bot.playlistAddShell(data);}
+            call: function(data, callback){bot.playlistAddShell(data, function() { callback() });}
         },
         {
             name: 'playlistRemove',
             type: 'command',
             privs: 'superuser',
             desc: 'Command the bot to remove the song from it\'s playlist and skip it\'s song.',
-            call: function(data){bot.playlistRemoveShell(data);}
+            call: function(data, callback){bot.playlistRemoveShell(data, function() { callback() });}
         },
         {
             name: 'playlistReorder',
             type: 'command',
             privs: 'superuser',
             desc: 'Command the bot to reorder (shuffle) it\'s playlist.',
-            call: function(data){bot.playlistReorderShell(data);}
+            call: function(data, callback){bot.playlistReorderShell(data, function() { callback() });}
         },
         {
             name: 'remDj',
             type: 'command',
             privs: 'superuser',
             desc: 'Command the bot to stop DJ-ing.',
-            call: function(){bot.remDj(bot.personality.userId);}
+            call: function(data, callback){bot.remDj(bot.personality.userId, function() { callback() });}
         },
         {
             name: 'removeFan',
             type: 'command',
             privs: 'superuser',
             desc: 'Command the bot to un-fan <username>.',
-            call: function(data){bot.becomeFanShell(data, 'unfan');}
+            call: function(data, callback){bot.becomeFanShell(data, 'unfan', function() { callback() });}
         },
         {
             name: 'reorder playlist',
@@ -242,7 +242,7 @@ bot.dictionary = {
             type: 'command',
             privs: 'fan',
             desc: 'Command the bot to show next 10 songs in it\'s playlist.',
-            call: function(data){bot.showPlaylistShell(data);}
+            call: function(data, callback){bot.showPlaylistShell(data, function() { callback() });}
         },
         {
             name: 'show playlist',
@@ -297,14 +297,14 @@ bot.dictionary = {
             type: 'command',
             privs: 'fan',
             desc: 'Command the bot to skip it\'s song (while DJ-ing.)',
-            call: function(){bot.stopSong();}
+            call: function(data, callback){bot.stopSong(function() { callback() });}
         },
         {
             name: 'tellTime',
             type: 'command',
             privs: 'everyone',
             desc: 'Command the bot to tell the time.',
-            call: function(data){bot.tellTimeShell(data);}
+            call: function(data, callback){bot.tellTimeShell(data, function() { callback() });}
         },
         {
             name: 'time',
@@ -323,7 +323,7 @@ bot.dictionary = {
             type: 'command',
             privs: 'everyone',
             desc: 'Command the bot to "Awesome" the current song.',
-            call: function(){bot.vote('up');}
+            call: function(data, callback){bot.vote('up', function() {callback()});}
         },
         {
             name: 'vote up',
@@ -351,7 +351,7 @@ bot.dictionary = {
         ],
         playlistAdd: [
             {'text': 'It\'s mine! All mine!'},
-            {'text': 'You don\t mind, do you $DJ?'}
+            {'text': 'You don\'t mind, do you $DJ?'}
         ],
         playlistRemove: [
             {'text': 'Where did THAT come from?!'},
@@ -456,6 +456,7 @@ Bot.prototype.isNameReferenced = function(message) {
 
 Bot.prototype.findCommand = function(data, substituteCommand) {
     try {
+        var parentThis = this;
         var foundCommand = false;
   	    var i = 0;
   	    for (i in this.dictionary.commands) {
@@ -470,8 +471,10 @@ Bot.prototype.findCommand = function(data, substituteCommand) {
   	            } else {
   	                if (this.checkSecurity(data, dictCommand)) {
                         this.logger('INFO: command:'+ dictCommand.name + ' being called.');
-                        dictCommand.call(data);
-  	                    this.findCommandResponse(data, dictCommand.name, 'success');
+                        dictCommand.call(data, function() {
+                            parentThis.findCommandResponse(data, dictCommand.name, 'success');
+                        });
+  	                    
   	                } else {
   	                    this.logger('INFO: command:'+ dictCommand.name + ' failed security.');
   	                    this.findCommandResponse(data, dictCommand.name, 'failedSecurity');
@@ -485,6 +488,42 @@ Bot.prototype.findCommand = function(data, substituteCommand) {
   	    }
     } catch (e) {
         this.logger('ERROR: Find command failed: ' + e);
+    }
+};
+
+Bot.prototype.findCommandResponse = function(data, foundCommand, type) {
+    try {
+        var responses;
+        switch(type) {
+            case 'success':
+                responses = this.dictionary.commandResponses[foundCommand];
+                if (!responses) {
+                    responses = this.dictionary.genericCommandResponses;
+                    this.logger('INFO: No response found for ' + foundCommand);
+                }
+                break;
+            case 'failedSecurity':
+                responses = this.dictionary.failedSecurityCommandResponses;
+                break;
+            case 'greeting':
+                responses = this.dictionary.greetingResponses;
+                break;
+            //fail
+            default:
+                responses = this.dictionary.unknownCommandResponses;
+        };
+        if (responses.length > 0) {
+            var response = responses[this.getRandomIndex(responses.length)].text;
+            response = response.replace('$USERNAME', '@'+data.name);
+            response = response.replace('$DJ', '@'+this.cache.currentDJ.name);
+            if (data.command == 'pm') {
+                this.pm(response, data.userid);
+            } else {
+                this.speak(response);
+            }
+        }
+    } catch (e) {
+        this.logger('ERROR: Cannot find command response: ' + e);
     }
 };
 
@@ -567,42 +606,6 @@ Bot.prototype.updateFans = function() {
     };
 };
 
-Bot.prototype.findCommandResponse = function(data, foundCommand, type) {
-    try {
-        var responses;
-        switch(type) {
-            case 'success':
-                responses = this.dictionary.commandResponses[foundCommand];
-                if (!responses) {
-                    responses = this.dictionary.genericCommandResponses;
-                    this.logger('INFO: No response found for ' + foundCommand);
-                }
-                break;
-            case 'failedSecurity':
-                responses = this.dictionary.failedSecurityCommandResponses;
-                break;
-            case 'greeting':
-                responses = this.dictionary.greetingResponses;
-                break;
-            //fail
-            default:
-                responses = this.dictionary.unknownCommandResponses;
-        };
-        if (responses.length > 0) {
-            var response = responses[this.getRandomIndex(responses.length)].text;
-            response = response.replace('$USERNAME', '@'+data.name);
-            response = response.replace('$DJ', '@'+this.cache.currentDJ.name);
-            if (data.command == 'pm') {
-                this.pm(response, data.userid);
-            } else {
-                this.speak(response);
-            }
-        }
-    } catch (e) {
-        this.logger('ERROR: Cannot find command response: ' + e);
-    }
-};
-
 Bot.prototype.updateCacheSongAndDJ = function() {
     try {
         var parentThis = this;
@@ -679,7 +682,7 @@ Bot.prototype.getRandomIndex = function(max) {
 // Command shells
 //
 
-Bot.prototype.becomeFanShell = function(speakData, mode) {
+Bot.prototype.becomeFanShell = function(speakData, mode, callback) {
     try {
         var parentThis = this;
         this.roomInfo(false, function(data) {
@@ -700,50 +703,55 @@ Bot.prototype.becomeFanShell = function(speakData, mode) {
                     }
                 }
             }
+            callback();
         });
+        
     } catch(e) {
-        this.logger('Cannot execute becomeFan (' + mode + '): ' + e);
+        this.logger('ERROR: Cannot execute becomeFan (' + mode + '): ' + e);
     }
 };
 
-Bot.prototype.playlistAddShell = function(speakData) {
+Bot.prototype.playlistAddShell = function(speakData, callback) {
     try {
         var parentThis = this;
         this.roomInfo(true, function(data) {
             var currentSong = data.room.metadata.songlog[0]._id;
-            parentThis.playlistAdd(currentSong);
+            parentThis.playlistAdd(currentSong, callback());
         });
     } catch(e) {
-        this.logger('Cannot add to playlist: ' + e);
+        this.logger('ERROR: Cannot add to playlist: ' + e);
     }
 };
 
-Bot.prototype.playlistRemoveShell = function(speakData) {
+Bot.prototype.playlistRemoveShell = function(speakData, callback) {
     try {
         var parentThis = this;
         this.roomInfo(true, function(data) {
             var currentSong = data.room.metadata.songlog[0]._id;
             parentThis.playlistRemove(currentSong);
             parentThis.stopSong();
+            callback();
         });
     } catch(e) {
-        this.logger('Cannot remove from playlist: ' + e);
+        this.logger('ERROR: Cannot remove from playlist: ' + e);
     }
 };
 
-Bot.prototype.comeHereShell = function(speakData) {
+Bot.prototype.comeHereShell = function(speakData, callback) {
     try {
         var parentThis = this;
         this.stalk(speakData.userid, function(stalkData) {
-            parentThis.roomRegister(stalkData.roomId);
+            parentThis.roomRegister(stalkData.roomId, function() {
+                callback();
+            });
         });
     } catch(e) {
-        this.logger('Cannot follow: ' + e);
+        this.logger('ERROR: Cannot follow: ' + e);
     }
 };
 
 
-Bot.prototype.followShell = function(speakData) {
+Bot.prototype.followShell = function(speakData, callback) {
     try {
         var parentThis = this;
         //Match the user name to uuid
@@ -760,6 +768,7 @@ Bot.prototype.followShell = function(speakData) {
             this.stalk(targetUuid, function(stalkData) {
                 parentThis.roomRegister(stalkData.roomId, function() {
                     parentThis.logger('INFO: Room move successful.');
+                    callback();
                 });
             });
         }
@@ -768,7 +777,7 @@ Bot.prototype.followShell = function(speakData) {
     }
 };
 
-Bot.prototype.listFanOfShell = function(speakData) {
+Bot.prototype.listFanOfShell = function(speakData, callback) {
     try {
         var response = 'Currently, I\'m a fan of: ';
         var i = 0;
@@ -781,12 +790,13 @@ Bot.prototype.listFanOfShell = function(speakData) {
             }
         }
         this.dictionary.commandResponses.fanOf[0] = {'text' : response};
+        callback();
     } catch (e) {
         this.logger('ERROR: Cannot list fans: ' + e);
     }
 };
 
-Bot.prototype.listFansShell = function(speakData) {
+Bot.prototype.listFansShell = function(speakData, callback) {
     try {
         var response = 'My fans are: ';
         var i = 0;
@@ -799,12 +809,13 @@ Bot.prototype.listFansShell = function(speakData) {
             }
         }
         this.dictionary.commandResponses.getFans[0] = {'text' : response};
+        callback();
     } catch (e) {
         this.logger('ERROR: Cannot list fans: ' + e);
     }
 };
 
-Bot.prototype.listCommandsShell = function(speakData) {
+Bot.prototype.listCommandsShell = function(speakData, callback) {
     try{
         var i = 0;
         for (i in this.dictionary.commands) {
@@ -822,15 +833,17 @@ Bot.prototype.listCommandsShell = function(speakData) {
                 } else {
                     privs = command.privs;
                 }
-                this.speak(command.name + ': ' + command.desc + ' -- ' + privs);
+                //this.logger(command.name + ': ' + command.desc + ' -- ' + privs);
             }
         }
+        this.dictionary.commandResponses.listCommands[0] = {'text' : 'You can find my commands here: https://sites.google.com/site/umbertothebot/'};
+        callback();
     } catch (e) {
         this.logger('ERROR: Cannot list commands: ' + e);
     }
 };
 
-Bot.prototype.showPlaylistShell = function(speakData) {
+Bot.prototype.showPlaylistShell = function(speakData, callback) {
     try{
         var parentThis = this;
         var response = 'My next 10 songs are: ';
@@ -846,14 +859,17 @@ Bot.prototype.showPlaylistShell = function(speakData) {
                     break;
                 }
             }
-            parentThis.speak(response);
+            //This is responsible for both showPlaylist and playlistReorder
+            parentThis.dictionary.commandResponses.showPlaylist[0] = {'text' : response};
+            parentThis.dictionary.commandResponses.playlistReorder[0] = {'text' : response};
+            callback();
         });
     } catch (e) {
          this.logger('ERROR: Cannot show playlist: ' + e);
     }
 };
 
-Bot.prototype.playlistReorderShell = function(speakData) {
+Bot.prototype.playlistReorderShell = function(speakData, callback) {
     try{
         var parentThis = this;
         var songMaxIndex;
@@ -875,7 +891,7 @@ Bot.prototype.playlistReorderShell = function(speakData) {
                         numberOfShuffles++;
                     });
                 } else {
-                    parentThis.showPlaylistShell(speakData);
+                    parentThis.showPlaylistShell(speakData, callback);
                 }
             } catch(e) {
                 parentThis.logger('ERROR: Cannot execute reorder inner function: ' + e);
@@ -887,10 +903,11 @@ Bot.prototype.playlistReorderShell = function(speakData) {
     }
 };
 
-Bot.prototype.tellTimeShell = function(speakData) {
+Bot.prototype.tellTimeShell = function(speakData, callback) {
     try{
         var now = new Date();
-        this.speak('The time is ' + dateFormat(now, 'h:MM TT Z'));
+        this.dictionary.commandResponses.tellTime[0] = {'text' : 'The time is ' + dateFormat(now, 'h:MM TT Z')};
+        callback();
     } catch (e) {
         this.logger('ERROR: Cannot tell time ' + e);
     }
