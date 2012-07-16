@@ -18,7 +18,8 @@ bot.personality = {
 	aliases: ['Umberto', 'Berto', 'Bert', '@Umberto the bot'],
 	superusers: ['4fb58549aaa5cd6de10000de', '4e7c40f3a3f75116580312d6'],
 	fanof: [],
-	fans: []
+	fans: [],
+	bouncerMode: false
 };
 
 bot.cache = {};
@@ -43,7 +44,7 @@ bot.dictionary = {
             type: 'command',
             privs: 'superuser',
             desc: 'Command the bot to become a fan of <username>.',
-            call: function(data, callback){bot.becomeFanShell(data, 'fan', function() { callback() });}
+            call: function(data, callback){bot.becomeFanShell(data, function() { callback() });}
         },
         {
             name: 'bob',
@@ -56,6 +57,38 @@ bot.dictionary = {
             type: 'alias',
             desc: 'Alias of "upVote".',
             aliasOf: 'upVote'
+        },
+        {
+            name: 'bouncer',
+            type: 'alias',
+            desc: 'Alias of "bouncerMode".',
+            aliasOf: 'bouncerMode'
+        },
+        {
+            name: 'bouncerMode',
+            type: 'command',
+            privs: 'superuser',
+            desc: 'Command the bot to kick out any one it is not a fan of.',
+            call: function(data, callback){bot.bouncerModeShell(data, true, function() { callback() });}
+        },
+        {
+            name: 'bouncerModeOff',
+            type: 'command',
+            privs: 'superuser',
+            desc: 'Command the bot to go back to a normal mode.',
+            call: function(data, callback){bot.bouncerModeShell(data, false, function() { callback() });}
+        },
+        {
+            name: 'bouncer off',
+            type: 'alias',
+            desc: 'Alias of "bouncerModeOff".',
+            aliasOf: 'bouncerModeOff'
+        },
+        {
+            name: 'close the room',
+            type: 'alias',
+            desc: 'Alias of "bouncerModeOn".',
+            aliasOf: 'bouncerModeOn'
         },
         {
             name: 'comeHere',
@@ -191,6 +224,12 @@ bot.dictionary = {
             aliasOf: 'stopSong'
         },
         {
+            name: 'open the room',
+            type: 'alias',
+            desc: 'Alias of "bouncerModeOff".',
+            aliasOf: 'bouncerModeOff'
+        },
+        {
             name: 'playlistAdd',
             type: 'command',
             desc: 'Command the bot to add the current song to it\'s palylist.',
@@ -223,7 +262,7 @@ bot.dictionary = {
             type: 'command',
             privs: 'superuser',
             desc: 'Command the bot to un-fan <username>.',
-            call: function(data, callback){bot.becomeFanShell(data, 'unfan', function() { callback() });}
+            call: function(data, callback){bot.removeFanShell(data, function() { callback() });}
         },
         {
             name: 'reorder playlist',
@@ -374,6 +413,7 @@ bot.dictionary = {
             {'text': 'I love this song $DJ!'},
             {'text': 'Hold my :beer: $USERNAME and I\'ll bop my head off!'},
             {'text': 'Is That Freedom Rock $USERNAME? Well Turn It Up Man.'},
+            {'text': 'A+ :star: $DJ.'},
         ],
         //empty arrays b/c the shell takes care of speaking OR will be dynamically ppopulated
         fanOf: [],
@@ -405,6 +445,7 @@ bot.dictionary = {
         {'text': '$USERNAME That makes as much sense as "Ich bin ein Berliner!"'},
         {'text': 'I wish I were as smart as you, $USERNAME, but alas I am just a bot.'},
         {'text': 'Good going $USERNAME, you just fried some of my circuits.'},
+        {'text': 'I\'m seeing :sparkles: from THAT one $USERNAME. Ouch.'},
     ],
     failedSecurityCommandResponses: [
         {'text': 'Sorry Dave, I can\'t let you do that!'},
@@ -422,7 +463,9 @@ bot.dictionary = {
         {'text': 'How _you_ doin\' $USERNAME?'},
         {'text': 'Good to see you $USERNAME.'},
         {'text': 'How do $USERNAME.'},
-        
+    ],
+    bouncerMessages: [
+        {'text' : 'Sorry, we\'re hosting a private event. Please come back later.'}
     ]
 };
 
@@ -664,6 +707,41 @@ Bot.prototype.isGreeted = function(speakData) {
     }
 };
 
+Bot.prototype.bouncerTheRoom = function() {
+    try { 
+        var parentThis = this;
+        this.roomInfo(false, function(data) {
+            var usersInRoom = data.users;
+            var i = 0;
+            for (i in usersInRoom) {
+                var userMatchMade = false;
+                var userInRoom = usersInRoom[i].userid;
+                var j = 0;
+                for (j in parentThis.personality.fanof) {
+                    if (userInRoom == parentThis.personality.fanof[j].userid) {
+                        userMatchMade = true;
+                    }
+                }
+                var k = 0;
+                for (k in parentThis.personality.superusers) {
+                    if (userInRoom == parentThis.personality.superusers[k]) {
+                        userMatchMade = true;
+                    }
+                }
+                if (userInRoom == parentThis.personality.userId) {
+                    userMatchMade = true;
+                }
+                if (!userMatchMade) {
+                    parentThis.bootUser(userInRoom, parentThis.dictionary.bouncerMessages[0].text);
+                }
+            }
+        });
+    
+    } catch (e) {
+        this.logger('ERROR: Cannot bouncer the room: ' +e);
+    }
+};
+
 Bot.prototype.logger = function(logText) {
     try{
         var now = new Date()
@@ -682,7 +760,7 @@ Bot.prototype.getRandomIndex = function(max) {
 // Command shells
 //
 
-Bot.prototype.becomeFanShell = function(speakData, mode, callback) {
+Bot.prototype.becomeFanShell = function(speakData, callback) {
     try {
         var parentThis = this;
         this.roomInfo(false, function(data) {
@@ -692,20 +770,32 @@ Bot.prototype.becomeFanShell = function(speakData, mode, callback) {
                 var userInRoom = usersInRoom[i];
                 var userRegExp = new RegExp(userInRoom.name, 'i');
                 if (userRegExp.test(speakData.text)) {
-                    if (mode == 'fan') {
-                        parentThis.becomeFan(userInRoom.userid, function(){
-                            parentThis.updateFans();
-                        });
-                    } else {
-                        parentThis.removeFan(userInRoom.userid, function(){
-                            parentThis.updateFans();
-                        });
-                    }
+                    parentThis.becomeFan(userInRoom.userid, function(){
+                        parentThis.updateFans();
+                    });
                 }
             }
             callback();
         });
         
+    } catch(e) {
+        this.logger('ERROR: Cannot execute becomeFan: ' + e);
+    }
+};
+
+Bot.prototype.removeFanShell = function(speakData, callback) {
+    try {
+        var parentThis = this;
+        var i = 0;
+        for (i in this.personality.fanof) {
+            var userRegExp = new RegExp(this.personality.fanof[i].name, 'i');
+            if (userRegExp.test(speakData.text)) {
+                this.removeFan(this.personality.fanof[i].userid, function(){
+                    parentThis.updateFans();
+                });
+            }
+        }
+        callback();
     } catch(e) {
         this.logger('ERROR: Cannot execute becomeFan (' + mode + '): ' + e);
     }
@@ -913,6 +1003,19 @@ Bot.prototype.tellTimeShell = function(speakData, callback) {
     }
 };
 
+Bot.prototype.bouncerModeShell = function (speakData, mode, callback) {
+    try{
+        if (mode == true) {
+            this.personality.bouncerMode = true;
+            this.bouncerTheRoom();
+        } else {
+            this.personality.bouncerMode = false;
+        }
+        callback();
+    } catch (e) {
+        this.logger('ERROR: Can\'t enter into or out of bouncer mode ' + e);
+    }
+};
 
 //
 // Listeners
@@ -956,5 +1059,11 @@ bot.on('pmmed', function(pmData) {
             });
             break;
         }
+    }
+});
+
+bot.on('registered', function() {
+    if (bot.personality.bouncerMode) {
+        bot.bouncerTheRoom();
     }
 });
