@@ -922,7 +922,7 @@ Bot.prototype.cleanPlaylist = function() {
             }
         }
     });
-    self.playlistRemove(i, function() {
+    self.playlistRemove(idxToRemove, function() {
         console.log('This one works!');
     });
 };
