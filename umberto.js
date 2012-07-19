@@ -27,7 +27,9 @@ bot.personality = {
 };
 
 bot.cache = {
-    songsToDelete: [],
+    currentSong: {},
+    currentDJ: {},
+    currentPlaylist: {},
     cleanRoom: false
 };
 
@@ -394,7 +396,10 @@ bot.dictionary = {
         ],
         downVote: [
             {'text': 'LAME $DJ!'},
-            {'text': 'Zzzzzz.... You can do better, right $DJ?'}
+            {'text': ':zzz: You can do better, right $DJ?'},
+            {'text': ':-1: <sad trombone>'},
+            {'text': 'Can we flush this one? :toilet:'},
+            {'text': 'Shoot me now.:gun:'},
         ],
         removeFan: [
             {'text': 'I\'m no longer a fan'},
@@ -410,11 +415,13 @@ bot.dictionary = {
         ],
         playlistRemove: [
             {'text': 'Where did THAT come from?!'},
-            {'text': 'Pewey!'}
+            {'text': 'Pewey!'},
+            {'text': ':poop:'},
         ],
         addDj: [
             {'text': 'Move it! I\'m headed up!'},
-            {'text': 'I can spin with the best of them!'}
+            {'text': 'I can spin with the best of them!'},
+            {'text': ':warning:Warning, bot on stage!:warning:'},
         ],
         remDj: [
             {'text': 'Stepping down.'},
@@ -440,6 +447,13 @@ bot.dictionary = {
             {'text': 'Hold my :beer: $USERNAME and I\'ll bop my head off!'},
             {'text': 'Is That Freedom Rock $USERNAME? Well Turn It Up Man.'},
             {'text': 'A+ :star: $DJ.'},
+            {'text': 'You\'re a :star2: up there, $DJ.'},
+            {'text': ':thumbsup: Great song!'},
+            {'text': 'I feel like dancin\'! :dancers:'},
+            {'text': ':mega: Here Ye! Here Ye! $DJ\'s song ROCKS!'},
+            {'text': 'You \'da :bomb: $DJ.'},
+            {'text': ':checkered_flag: Winner!'},
+            
         ],
         //empty arrays b/c the shell takes care of speaking OR will be dynamically ppopulated
         fanOf: [],
@@ -472,6 +486,9 @@ bot.dictionary = {
         {'text': 'I wish I were as smart as you, $USERNAME, but alas I am just a bot.'},
         {'text': 'Good going $USERNAME, you just fried some of my circuits.'},
         {'text': 'I\'m seeing :sparkles: from THAT one $USERNAME. Ouch.'},
+        {'text': 'Huh? :confounded:'},
+        {'text': 'Uhhhh, uhhhh, uhhhhh, whaaaa?'},
+        {'text': 'I\'m sorry $USERNAME I\'m a little confused and lost.'},
     ],
     failedSecurityCommandResponses: [
         {'text': 'Sorry Dave, I can\'t let you do that!'},
@@ -680,13 +697,26 @@ Bot.prototype.updateCacheSongAndDJ = function() {
     try {
         var self = this;
         this.roomInfo(true, function(roomData){
-            self.cache.currentSong = roomData.room.metadata.current_song;
+            self.cache.currentSong = clone(roomData.room.metadata.current_song);
+            
             self.getProfile(roomData.room.metadata.current_dj, function(profileData) {
-                self.cache.currentDJ = profileData;
+                self.cache.currentDJ = clone(profileData);
             });
         });
     } catch (e) {
         this.logger('ERROR: Cannot update song data in cache: ' + e);
+    }
+};
+
+Bot.prototype.updateCachePlaylist = function() {
+    try { 
+        var self = this;
+        this.playlistAll(function(data){
+            self.logger('INFO: Updating cache playlist.');
+            self.cache.currentPlaylist = clone(data);
+        });
+    } catch (e) {
+        this.logger('ERROR: Cannot update playlist data in cache: ' + e);
     }
 };
 
@@ -775,23 +805,6 @@ Bot.prototype.bouncerTheRoom = function() {
     }
 };
 
-Bot.prototype.deleteSongs = function() {
-    try {
-        var self = this;
-        if (!this.cache.deleteSong.songToDeleteIdx) {
-            console.log('Not Yet...');
-            setTimeout(function() {self.deleteSongs()}, 200);
-        } else {
-            console.log('Now!!! ' + this.cache.deleteSong.songToDeleteIdx);
-            this.playlistRemove(this.cache.deleteSong.songToDeleteIdx, function() {
-                console.log('In remove');
-            });
-        }
-    } catch(e) {
-        this.logger('ERROR: Cannot delete songs: ' + e);
-    }
-};
-
 Bot.prototype.logger = function(logText) {
     try{
         var now = new Date()
@@ -815,6 +828,7 @@ Bot.prototype.addDjShell = function(speakData, callback) {
         var self = this;
         this.addDj(function() {
             self.personality.isDJ = true;
+            console.log('adddj self.personality.isDJ: ' + self.personality.isDJ);
             callback();
         });
     } catch(e) {
@@ -841,7 +855,8 @@ Bot.prototype.playlistAddShell = function(speakData, callback) {
         var self = this;
         bot.playlistAll(function(data){
             self.playlistAdd('default', self.cache.currentSong._id, data.list.length, function() {
-                callback()
+                self.updateCachePlaylist();
+                callback();
             });
         });
     } catch(e) {
@@ -851,79 +866,35 @@ Bot.prototype.playlistAddShell = function(speakData, callback) {
 
 Bot.prototype.playlistRemoveShell = function(speakData, callback) {
     try {
-        if (this.personality.isDJ == true) {
-            var self = this;
-            this.cache.deleteSong = {};
-            
-            this.cache.deleteSong.songToRemoveId = clone(this.cache.currentSong._id);
-            console.log('putting: this.cache.deleteSong.songToRemoveId: ' + this.cache.deleteSong.songToRemoveId);
-            this.cache.deleteSong.songToRemoveName = clone(this.cache.currentSong.metadata.song);
-            console.log('putting this.cache.deleteSong.songToRemoveName: ' + this.cache.deleteSong.songToRemoveName);
-            
-            
-            //this.logger('INFO: Song: "' + songToRemoveName + '" (' + songToRemoveId + ') scheduled to be removed.');
-            this.songStop(function() {
-                self.playlistAll(function(data){
-                    //console.log('data: %j', data);
-                    var i = 0;
-                    for (i in data.list) {
-                        if (data.list[i]._id == self.cache.deleteSong.songToRemoveId) {
-                            var index = clone(i);
-                            self.cache.deleteSong.songToDeleteIdx = index;
-                            console.log(' putting: self.cache.deleteSong.songToDeleteIdx: ' + self.cache.deleteSong.songToDeleteIdx);
-                        }
-                    }
-                });
-            });
-            this.deleteSongs();
-        }
+        
     } catch(e) {
         this.logger('ERROR: Cannot remove from playlist: ' + e);
     }
 };
 
 Bot.prototype.testRemoveSong = function(speakData, callback) {
+    var self = this;
+    console.log('playlist: %j', this.cache.currentPlaylist);
+    console.log('            ');
+    
     var x = '';
     var songId = clone(this.cache.currentSong._id);
+    
     console.log('songId: ' + songId + ' this.cache.currentSong.metadata.song: ' + this.cache.currentSong.metadata.song);
-    var self = this;
+    
+    
     this.stopSong(function(){
-        setTimeout(function() {
-            self.playlistAll(function(data){
-                var i = 0;
-                for (i in data.list) {
-                    console.log('i: ' + i);
-                    if (data.list[i]._id == songId) {
-                        x = i;
-                        console.log('data.list[i]._id: ' + data.list[i]._id + ' i: ' + i + ' x: ' + x);
-                        
-                    }
-                }
-                console.log(' x is still: ' + x);
-                self.playlistRemove(x, function() {
-                    console.log('Tjis one works!');
-                });
-            });
-        }, 2000);
-        
-        
-    });
-};
-
-Bot.prototype.cleanPlaylist = function() {
-    var self = this;
-
-    this.playlistAll(function(data){
         var i = 0;
-        var idxToRemove;
-        for (i in data.list) {            
-            if (data.list[i]._id == '4df6a8fa902168067900019d') {
-                idxToRemove = clone(i);
+        for (i in self.cache.currentPlaylist.list) {
+            console.log('i: ' + i);
+            if (self.cache.currentPlaylist.list[i]._id == songId) {
+                x = i;
+                console.log('self.cache.currentPlaylist.list[i]._id: ' + self.cache.currentPlaylist.list[i]._id + ' i: ' + i + ' x: ' + x);        
             }
         }
-    });
-    self.playlistRemove(idxToRemove, function() {
-        console.log('This one works!');
+        self.playlistRemove(x, function() {
+            console.log('This one works!');
+        });
     });
 };
 
@@ -977,6 +948,7 @@ Bot.prototype.playlistReorderShell = function(speakData, callback) {
                     });
                 } else {
                     self.showPlaylistShell(speakData, callback);
+                    self.updateCachePlaylist();
                 }
             } catch(e) {
                 self.logger('ERROR: Cannot execute reorder inner function: ' + e);
@@ -1140,7 +1112,7 @@ Bot.prototype.listCommandsShell = function(speakData, callback) {
 Bot.prototype.tellTimeShell = function(speakData, callback) {
     try{
         var now = new Date();
-        this.dictionary.commandResponses.tellTime[0] = {'text' : 'The time is ' + dateFormat(now, 'h:MM TT Z')};
+        this.dictionary.commandResponses.tellTime[0] = {'text' : ':clock' + dateFormat(now, 'h') + ': The time is ' + dateFormat(now, 'h:MM TT Z')};
         callback();
     } catch (e) {
         this.logger('ERROR: Cannot tell time ' + e);
@@ -1179,6 +1151,7 @@ bot.on('roomChanged', function(data){
     //init data
     bot.updateFans();
     bot.updateCacheSongAndDJ();
+    bot.updateCachePlaylist();
     if (data.room.roomid == bot.personality.homeRoomId) {
         this.cache.cleanRoom = true;
         this.personality.bouncerMode = true;
@@ -1186,11 +1159,12 @@ bot.on('roomChanged', function(data){
     }
     //greet everyone
     bot.speak('Hi everyone!');
-    bot.cleanPlaylist();
 });
 
 bot.on('newsong', function(songData) {
     bot.updateCacheSongAndDJ();
+    console.log('newsong bot.personality.isDJ: ' + bot.personality.isDJ);
+    bot.updateCachePlaylist();
 });
 
 bot.on('pmmed', function(pmData) {
