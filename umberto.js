@@ -18,7 +18,7 @@ var bot = new Bot(botBootstrapData.auth, botBootstrapData.userId, botBootstrapDa
 bot.personality = {
     name: 'Umberto the Bot',
 	aliases: ['Umberto', 'Berto', 'Bert', '@Umberto the bot'],
-	//           bb                           zombie ian                'lvr'
+	//            bb                           zombie ian                  lvr
 	superusers: ['4fb58549aaa5cd6de10000de', '4fe17646eb35c12d6d00016f', '4e7c40f3a3f75116580312d6'],
 	fanof: [],
 	fans: [],
@@ -701,6 +701,10 @@ Bot.prototype.updateCacheSongAndDJ = function() {
             
             self.getProfile(roomData.room.metadata.current_dj, function(profileData) {
                 self.cache.currentDJ = clone(profileData);
+                if(self.cache.currentDJ.userid == self.personality.userId && self.cache.currentSong) {
+                	self.logger('INFO: Playing song: ' + self.cache.currentSong.metadata.artist + ' "' + self.cache.currentSong.metadata.song + '" ' + self.cache.currentSong._id);
+                	self.updateCachePlaylist();
+                }
             });
         });
     } catch (e) {
@@ -767,39 +771,40 @@ Bot.prototype.isGreeted = function(speakData) {
 Bot.prototype.bouncerTheRoom = function() {
     try { 
         var self = this;
-
-        this.roomInfo(false, function(data) {
-            var usersInRoom = data.users;
-            var i = 0;
-            for (i in usersInRoom) {
-                var userMatchMade = false;
-                var userInRoom = usersInRoom[i].userid;
-                var j = 0;
+		
+		if (this.personality.bouncerMode == true) {
+        	this.roomInfo(false, function(data) {
+            	var usersInRoom = data.users;
+            	var i = 0;
+            	for (i in usersInRoom) {
+                	var userMatchMade = false;
+                	var userInRoom = usersInRoom[i].userid;
+                	var j = 0;
                 
-                for (j in self.personality.fanof) {
-                    if (userInRoom == self.personality.fanof[j].userid && !self.cache.cleanRoom ) {
-                        userMatchMade = true;
-                    }
-                }
-                var k = 0;
-                for (k in self.personality.superusers) {
-                    if (userInRoom == self.personality.superusers[k]) {
-                        userMatchMade = true;
-                    }
-                }
-                if (userInRoom == self.personality.userId) {
-                    userMatchMade = true;
-                }
-                if (!userMatchMade) {
-                    if (!self.cache.cleanRoom) {
-                        self.bootUser(userInRoom, self.dictionary.bouncerMessages[0].text);
-                    } else {
-                        self.bootUser(userInRoom, self.dictionary.bouncerMessages[1].text);
-                    }
-                }
-            }
-        });
-    
+                	for (j in self.personality.fanof) {
+                    	if (userInRoom == self.personality.fanof[j].userid && !self.cache.cleanRoom ) {
+                        	userMatchMade = true;
+                    	}
+                	}
+               	 	var k = 0;
+                	for (k in self.personality.superusers) {
+                    	if (userInRoom == self.personality.superusers[k]) {
+                        	userMatchMade = true;
+                    	}
+                	}
+                	if (userInRoom == self.personality.userId) {
+                    	userMatchMade = true;
+                	}
+                	if (!userMatchMade) {
+                    	if (!self.cache.cleanRoom) {
+                        	self.bootUser(userInRoom, self.dictionary.bouncerMessages[0].text);
+                    	} else {
+                        	self.bootUser(userInRoom, self.dictionary.bouncerMessages[1].text);
+                    	}
+                	}
+            	}
+            });
+    	}
     } catch (e) {
         this.logger('ERROR: Cannot bouncer the room: ' +e);
     }
@@ -828,7 +833,6 @@ Bot.prototype.addDjShell = function(speakData, callback) {
         var self = this;
         this.addDj(function() {
             self.personality.isDJ = true;
-            console.log('adddj self.personality.isDJ: ' + self.personality.isDJ);
             callback();
         });
     } catch(e) {
@@ -874,28 +878,40 @@ Bot.prototype.playlistRemoveShell = function(speakData, callback) {
 
 Bot.prototype.testRemoveSong = function(speakData, callback) {
     var self = this;
-    console.log('playlist: %j', this.cache.currentPlaylist);
-    console.log('            ');
-    
-    var x = '';
-    var songId = clone(this.cache.currentSong._id);
-    
+    var songId = this.cache.currentSong._id;
     console.log('songId: ' + songId + ' this.cache.currentSong.metadata.song: ' + this.cache.currentSong.metadata.song);
-    
-    
-    this.stopSong(function(){
-        var i = 0;
-        for (i in self.cache.currentPlaylist.list) {
-            console.log('i: ' + i);
-            if (self.cache.currentPlaylist.list[i]._id == songId) {
-                x = i;
-                console.log('self.cache.currentPlaylist.list[i]._id: ' + self.cache.currentPlaylist.list[i]._id + ' i: ' + i + ' x: ' + x);        
-            }
-        }
-        self.playlistRemove(x, function() {
-            console.log('This one works!');
-        });
+    var attempts = 0;
+    this.stopSong(function() {
+    	deleteSong();
     });
+    
+    function deleteSong() {
+    	console.log('attempts: ' + attempts);
+    	var i = 0;
+    	for (i in self.cache.currentPlaylist.list) {
+        	if (self.cache.currentPlaylist.list[i]._id == songId) {
+            	console.log('self.cache.currentPlaylist.list[i]._id: ' + self.cache.currentPlaylist.list[i]._id + ' i: ' + i);        
+        		self.playlistRemove(i, function(deleteData) {
+        			console.log('deleteData: %j' + deleteData);
+        			
+        			/*
+        			self.playlistAll(function(playlistData){
+        				console.log('here');
+        				var j = 0;
+        				for (j in playlistData.list) {
+        					if (playlistData.list[j]._id == songId) {
+        						deleteSong();
+        						break;
+        					}
+        				}
+        			});
+        			*/
+    			});
+        	}
+    	}
+    	attempts++;
+    	
+    }    
 };
 
 Bot.prototype.showPlaylistShell = function(speakData, callback) {
@@ -1156,6 +1172,9 @@ bot.on('roomChanged', function(data){
         this.cache.cleanRoom = true;
         this.personality.bouncerMode = true;
         this.bouncerTheRoom();
+    } else {
+    	this.cache.cleanRoom = false;
+    	this.personality.bouncerMode = false;
     }
     //greet everyone
     bot.speak('Hi everyone!');
@@ -1163,8 +1182,6 @@ bot.on('roomChanged', function(data){
 
 bot.on('newsong', function(songData) {
     bot.updateCacheSongAndDJ();
-    console.log('newsong bot.personality.isDJ: ' + bot.personality.isDJ);
-    bot.updateCachePlaylist();
 });
 
 bot.on('pmmed', function(pmData) {
@@ -1187,7 +1204,7 @@ bot.on('pmmed', function(pmData) {
 });
 
 bot.on('registered', function(data) {
-    if (bot.personality.bouncerMode) {
+    if (bot.personality.bouncerMode && data.user[0].userid != this.personality.userId) {
         bot.bouncerTheRoom();
     }
     var userRegExp = new RegExp('tt_stats', 'i');

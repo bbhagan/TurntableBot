@@ -1,0 +1,19 @@
+{
+   "website":"",
+   "about":"",
+   "hangout":"",
+   "name":"Umberto the Bot",
+   "success":true,
+   "laptop_version":null,
+   "msgid":60,
+   "laptop":"mac",
+   "created":1337379494.5,
+   "userid":"4fb6caa6aaa5cd2e92000029",
+   "twitter":"",
+   "acl":0,
+   "fans":19,
+   "points":1087,
+   "facebook":"",
+   "avatarid":2,
+   "topartists":""
+}
