@@ -30,7 +30,8 @@ bot.cache = {
     currentSong: {},
     currentDJ: {},
     currentPlaylist: {},
-    cleanRoom: false
+    cleanRoom: false,
+    usernameReference: []
 };
 
 bot.dictionary = {
@@ -580,6 +581,7 @@ Bot.prototype.findCommand = function(data, substituteCommand) {
 
 Bot.prototype.findCommandResponse = function(data, foundCommand, type) {
     try {
+        var self = this;
         var responses;
         switch(type) {
             case 'success':
@@ -606,13 +608,39 @@ Bot.prototype.findCommandResponse = function(data, foundCommand, type) {
             if (data.command == 'pm') {
                 this.pm(response, data.userid);
             } else {
-                this.speak(response);
+                var now = new Date();
+                //limit the responses in open chatCommand
+                var clearToSpeak = true;
+                var i = 0;
+                for (i in this.cache.usernameReference) {
+                	var cacheRef = this.cache.usernameReference[i];
+                	if (cacheRef && (cacheRef.username == data.name || cacheRef.username == this.cache.currentDJ.name) && cacheRef.timestamp.getTime() + 3500 > now.getTime() ) {
+                		clearToSpeak = false;
+                	}
+                }
+                if (clearToSpeak) {
+                	this.speak(response);
+                	this.cache.usernameReference.push({'username':data.name, 'timestamp': now});
+                	this.cache.usernameReference.push({'username':this.cache.currentDJ.name, 'timestamp': now});
+                	setTimeout(function() {
+                		cleanUsernameReferenceCache();
+                	}, 4000);
+                }
             }
+        }
+        function cleanUsernameReferenceCache() {
+        	var now = new Date();
+        	if (self.cache.usernameReference[0] && self.cache.usernameReference[0].timestamp.getTime() + 3500 < now.getTime()) {
+        		self.cache.usernameReference.shift();
+        		cleanUsernameReferenceCache();
+        	}
         }
     } catch (e) {
         this.logger('ERROR: Cannot find command response: ' + e);
     }
 };
+
+
 
 Bot.prototype.checkSecurity = function(data, command) {
     try {
@@ -876,44 +904,6 @@ Bot.prototype.playlistRemoveShell = function(speakData, callback) {
     }
 };
 
-Bot.prototype.testRemoveSong = function(speakData, callback) {
-    var self = this;
-    var songId = this.cache.currentSong._id;
-    console.log('songId: ' + songId + ' this.cache.currentSong.metadata.song: ' + this.cache.currentSong.metadata.song);
-    var attempts = 0;
-    this.stopSong(function() {
-    	deleteSong();
-    });
-    
-    function deleteSong() {
-    	console.log('attempts: ' + attempts);
-    	var i = 0;
-    	for (i in self.cache.currentPlaylist.list) {
-        	if (self.cache.currentPlaylist.list[i]._id == songId) {
-            	console.log('self.cache.currentPlaylist.list[i]._id: ' + self.cache.currentPlaylist.list[i]._id + ' i: ' + i);        
-        		self.playlistRemove(i, function(deleteData) {
-        			console.log('deleteData: %j' + deleteData);
-        			
-        			/*
-        			self.playlistAll(function(playlistData){
-        				console.log('here');
-        				var j = 0;
-        				for (j in playlistData.list) {
-        					if (playlistData.list[j]._id == songId) {
-        						deleteSong();
-        						break;
-        					}
-        				}
-        			});
-        			*/
-    			});
-        	}
-    	}
-    	attempts++;
-    	
-    }    
-};
-
 Bot.prototype.showPlaylistShell = function(speakData, callback) {
     try{
         var self = this;
@@ -921,7 +911,6 @@ Bot.prototype.showPlaylistShell = function(speakData, callback) {
         bot.playlistAll('default', function(data){
             var i = 0;
             for (i in data.list) {
-                console.log('song: ' + data.list[i]._id + ' ' + data.list[i].metadata.song);
                 response += '"' + data.list[i].metadata.song + '" by ' + data.list[i].metadata.artist
                 //only show 10
                 if (i < 9) {
@@ -1181,7 +1170,7 @@ bot.on('roomChanged', function(data){
 });
 
 bot.on('newsong', function(songData) {
-    bot.updateCacheSongAndDJ();
+    bot.updateCacheSongAndDJ();    
 });
 
 bot.on('pmmed', function(pmData) {
