@@ -38,3 +38,5 @@ node_modules/clone/clone.js
 node_modules/clone/test.js
 
 .DS_Store
+
+node_modules/clone/README.md
