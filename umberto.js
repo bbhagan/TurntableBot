@@ -7,19 +7,20 @@ var clone = require('clone');
 // Init the bot
 //
 
+
 var botBootstrapData = {
-	auth: 'auth+live+30494244aa45aacabdf9b60e9e313133bfceff25',
-	userId: '4fb6caa6aaa5cd2e92000029',
+	auth: 'auth+live+a7e865d3a5c2a6201393efd5566c4817291fa778',
+	userId: '4fe17646eb35c12d6d00016f',
 	homeRoomId: '5007b2f6eb35c17ea20000fe'
 };
 
 var bot = new Bot(botBootstrapData.auth, botBootstrapData.userId, botBootstrapData.homeRoomId);
 
 bot.personality = {
-    name: 'Umberto the Bot',
-	aliases: ['Umberto', 'Berto', 'Bert', '@Umberto the bot'],
-	//            bb                           zombie ian                  lvr
-	superusers: ['4fb58549aaa5cd6de10000de', '4fe17646eb35c12d6d00016f', '4e7c40f3a3f75116580312d6'],
+    name: 'Zombie Ian',
+	aliases: ['Ian', 'Zombie', '@Zombie Ian'],
+	//           bb                           bert               'lvr'
+	superusers: ['4fb58549aaa5cd6de10000de', '4fb6caa6aaa5cd2e92000029', '4e7c40f3a3f75116580312d6'],
 	fanof: [],
 	fans: [],
 	bouncerMode: false,
