@@ -401,14 +401,14 @@ bot.dictionary = {
             {'text': ':zzz: You can do better, right $DJ?'},
             {'text': ':-1: <sad trombone>'},
             {'text': 'Can we flush this one? :toilet:'},
-            {'text': 'Shoot me now.:gun:'},
+            {'text': 'Shoot me now.:gun:'}
         ],
         removeFan: [
             {'text': 'I\'m no longer a fan'},
             {'text': 'Yeah, I didn\'t like them anyway!'}
         ],
         stopSong: [
-            {'text': 'Moving on...'},
+            {'text': 'Moving on...'}
         ],
         playlistAdd: [
             {'text': 'It\'s mine! All mine!'},
@@ -418,22 +418,22 @@ bot.dictionary = {
         playlistRemove: [
             {'text': 'Where did THAT come from?!'},
             {'text': 'Pewey!'},
-            {'text': ':poop:'},
+            {'text': ':poop:'}
         ],
         addDj: [
             {'text': 'Move it! I\'m headed up!'},
             {'text': 'I can spin with the best of them!'},
-            {'text': ':warning:Warning, bot on stage!:warning:'},
+            {'text': ':warning:Warning, bot on stage!:warning:'}
         ],
         remDj: [
             {'text': 'Stepping down.'},
             {'text': 'Break it on down.'}
         ],
         bouncerMode: [
-            {'text': 'Closing down the room.'},
+            {'text': 'Closing down the room.'}
         ],
         bouncerModeOff: [
-            {'text': 'Opening up the room.'},
+            {'text': 'Opening up the room.'}
         ],
         upVote: [
             {'text': 'This song _is_ awesome, $USERNAME!'},
@@ -454,7 +454,7 @@ bot.dictionary = {
             {'text': 'I feel like dancin\'! :dancers:'},
             {'text': ':mega: Here Ye! Here Ye! $DJ\'s song ROCKS!'},
             {'text': 'You \'da :bomb: $DJ.'},
-            {'text': ':checkered_flag: Winner!'},
+            {'text': ':checkered_flag: Winner!'}
             
         ],
         //empty arrays b/c the shell takes care of speaking OR will be dynamically ppopulated
@@ -469,7 +469,7 @@ bot.dictionary = {
         {'text': 'You got it $USERNAME!'},
         {'text': 'Done and done $USERNAME.'},
         {'text': 'Yes, yes, yes, YES!'},
-        {'text': 'Bam! BAM!'},
+        {'text': 'Bam! BAM!'}
     ],
     unknownCommandResponses: [
         {'text': 'Sorry $USERNAME I don\'t know that one!'},
@@ -490,13 +490,13 @@ bot.dictionary = {
         {'text': 'I\'m seeing :sparkles: from THAT one $USERNAME. Ouch.'},
         {'text': 'Huh? :confounded:'},
         {'text': 'Uhhhh, uhhhh, uhhhhh, whaaaa?'},
-        {'text': 'I\'m sorry $USERNAME I\'m a little confused and lost.'},
+        {'text': 'I\'m sorry $USERNAME I\'m a little confused and lost.'}
     ],
     failedSecurityCommandResponses: [
         {'text': 'Sorry Dave, I can\'t let you do that!'},
         {'text': 'You ain\'t the boss of me $USERNAME!'},
         {'text': 'Says you $USERNAME! Whatever.'},
-        {'text': 'Uhmmmm, no $USERNAME. Deal with it.'},
+        {'text': 'Uhmmmm, no $USERNAME. Deal with it.'}
     ],
     greetingResponses: [
         {'text': 'Hey $USERNAME!'},
@@ -507,7 +507,7 @@ bot.dictionary = {
         {'text': '\u00BFQue pasa $USERNAME?'},
         {'text': 'How _you_ doin\' $USERNAME?'},
         {'text': 'Good to see you $USERNAME.'},
-        {'text': 'How do $USERNAME.'},
+        {'text': 'How do $USERNAME.'}
     ],
     bouncerMessages: [
         {'text' : 'Sorry, we\'re hosting a private event. Please come back later.'},
