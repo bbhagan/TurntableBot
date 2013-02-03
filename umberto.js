@@ -170,6 +170,7 @@ bot.dictionary = {
             desc: 'Alias of "remDj".',
             aliasOf: 'remDj'
         },
+        /*
         {
             name: 'follow',
             type: 'command',
@@ -177,6 +178,7 @@ bot.dictionary = {
             desc: 'Command the bot to stalk <username>.',
             call: function(data){bot.followShell(data, function() { callback() });}
         },
+        */
         {
             name: 'getFans',
             type: 'command',
@@ -356,6 +358,7 @@ bot.dictionary = {
             desc: 'Command the bot to tell the time.',
             call: function(data, callback){bot.tellTimeShell(data, function() { callback() });}
         },
+        /*
         {
             name: 'testRemoveSong',
             type: 'command',
@@ -363,7 +366,7 @@ bot.dictionary = {
             desc: '',
             call: function(data, callback){bot.testRemoveSong(data, callback)}
         },
-        
+        */
         {
             name: 'time',
             type: 'alias',
@@ -527,20 +530,24 @@ bot.personality.aliases.push(bot.personality.name);
 //
 
 Bot.prototype.isNameReferenced = function(message) {
-	try {
+    var returnVal = false;
+    try {
 	    var i = 0;
+
 	
 	    for (i in this.personality.aliases) {
-		    //var namePattern = new RegExp (/\bbert\b/i);
-		    var nameRegEx = new RegExp('\\b' + this.personality.aliases[i] + '\\b', 'i');
-		    if (nameRegEx.test(message)) {
-			    return true;
-		    }
+            if (this.personality.aliases.hasOwnProperty(i)) {
+		        //var namePattern = new RegExp (/\bbert\b/i);
+		        var nameRegEx = new RegExp('\\b' + this.personality.aliases[i] + '\\b', 'i');
+		        if (nameRegEx.test(message)) {
+			        returnVal = true;
+		        }
+            }
 	    }
-	    return false;
 	} catch (e) {
 	    this.logger('ERROR: Is name referenced failed: ' + e);
 	}
+    return returnVal;
 };
 
 Bot.prototype.findCommand = function(data, substituteCommand) {
@@ -549,28 +556,30 @@ Bot.prototype.findCommand = function(data, substituteCommand) {
         var foundCommand = false;
   	    var i = 0;
   	    for (i in this.dictionary.commands) {
-  	        var dictCommand = this.dictionary.commands[i];
-  	        var cmdRegExp = new RegExp('\\b' + dictCommand.name + '\\b', 'i');
-  	        var chatCommand = (substituteCommand) ? substituteCommand : data.text;
-  	        if (cmdRegExp.test(chatCommand)) {
-  	            foundCommand = true;
-  	            if (dictCommand.type == 'alias') {
-  	                this.logger('INFO: command:'+ dictCommand.name + ' is alias of ' + dictCommand.aliasOf + '.');
-  	                this.findCommand(data, dictCommand.aliasOf);
-  	            } else {
-  	                if (this.checkSecurity(data, dictCommand)) {
-                        this.logger('INFO: command:'+ dictCommand.name + ' being called.');
-                        dictCommand.call(data, function() {
-                            self.findCommandResponse(data, dictCommand.name, 'success');
-                        });
-  	                    
-  	                } else {
-  	                    this.logger('INFO: command:'+ dictCommand.name + ' failed security.');
-  	                    this.findCommandResponse(data, dictCommand.name, 'failedSecurity');
-  	                }
-  	            }
-  	            break;
-  	        } 
+            if (this.dictionary.commands.hasOwnProperty(i)) {
+                var dictCommand = this.dictionary.commands[i];
+                var cmdRegExp = new RegExp('\\b' + dictCommand.name + '\\b', 'i');
+                var chatCommand = (substituteCommand) ? substituteCommand : data.text;
+                if (cmdRegExp.test(chatCommand)) {
+                    foundCommand = true;
+                    if (dictCommand.type == 'alias') {
+                        this.logger('INFO: command:'+ dictCommand.name + ' is alias of ' + dictCommand.aliasOf + '.');
+                        this.findCommand(data, dictCommand.aliasOf);
+                    } else {
+                        if (this.checkSecurity(data, dictCommand)) {
+                            this.logger('INFO: command:'+ dictCommand.name + ' being called.');
+                            dictCommand.call(data, function() {
+                                self.findCommandResponse(data, dictCommand.name, 'success');
+                            });
+
+                        } else {
+                            this.logger('INFO: command:'+ dictCommand.name + ' failed security.');
+                            this.findCommandResponse(data, dictCommand.name, 'failedSecurity');
+                        }
+                    }
+                    break;
+                }
+            }
   	    }
   	    if (foundCommand == false) {
   	        this.findCommandResponse(data, dictCommand.name, 'unknown');
@@ -695,8 +704,10 @@ Bot.prototype.updateFans = function() {
         this.getFans(function(data) {
             var i = 0;
             for (i in data.fans) {
-                self.personality.fans[i] = {};
-                self.personality.fans[i].userid = data.fans[i];
+                if (data.fans.hasOwnProperty(i)){
+                    self.personality.fans[i] = {};
+                    self.personality.fans[i].userid = data.fans[i];
+                }
             }
             populateUserNames(self.personality.fans);
         });
@@ -1031,11 +1042,13 @@ Bot.prototype.listFansShell = function(speakData, callback) {
         var response = 'My fans are: ';
         var i = 0;
         for (i in this.personality.fans) {
-            response += '@'+this.personality.fans[i].name;
-            if (i < this.personality.fans.length - 1) {
-                response += ', ';
-            } else {
-                response += '.';
+            if (this.personality.fans.hasOwnProperty(i)) {
+                response += '@'+this.personality.fans[i].name;
+                if (i < this.personality.fans.length - 1) {
+                    response += ', ';
+                } else {
+                    response += '.';
+                }
             }
         }
         this.dictionary.commandResponses.getFans[0] = {'text' : response};
